@@ -42,6 +42,7 @@ export default function App() {
 
   return (
     <View style={styles.container}>
+<<<<<<< HEAD
       <Text style={styles.title}>Seen Users</Text>
       {isLoading ? (
         <ActivityIndicator size="large" />
@@ -56,6 +57,9 @@ export default function App() {
           )}
         />
       )}
+=======
+      <Text>Open up App.tsx to start working on your app!!</Text>
+>>>>>>> 01ef37e7b97216d5f591da16e340c16fab97dd48
       <StatusBar style="auto" />
     </View>
   );
