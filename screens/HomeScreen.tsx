@@ -1,20 +1,20 @@
 import { StyleSheet, Text, View } from "react-native";
+import { CreatePostField, PostCard } from "../components";
 
 export const HomeScreen = () =>
 {
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Welcome to Seen</Text>
-            <Text style={styles.subtitle}>
-                This tab is the base Home shell. We can wire event feeds and featured cards here next.
-            </Text>
+            <CreatePostField
+                placeholderText="What's on your mind?"
+            />
 
-            <View style={styles.card}>
-                <Text style={styles.cardTitle}>Upcoming Work</Text>
-                <Text style={styles.cardText}>- Event feed section</Text>
-                <Text style={styles.cardText}>- Nearby venues module</Text>
-                <Text style={styles.cardText}>- Featured artists highlights</Text>
-            </View>
+            <Text style={styles.sectionTitle}>Feed</Text>
+
+            <PostCard
+                authorName="Seen Placeholder"
+                bodyText="Placeholder for actual posts in the future."
+            />
         </View>
     );
 };
@@ -25,42 +25,15 @@ const styles = StyleSheet.create(
     {
         flex: 1,
         paddingHorizontal: 20,
-        paddingTop: 20,
+        paddingTop: 14,
         backgroundColor: "#f8fafc",
     },
-    title:
-    {
-        fontSize: 24,
-        fontWeight: "700",
-        color: "#0f172a",
-        marginBottom: 8,
-    },
-    subtitle:
-    {
-        fontSize: 14,
-        lineHeight: 20,
-        color: "#475569",
-        marginBottom: 16,
-    },
-    card:
-    {
-        backgroundColor: "#ffffff",
-        borderRadius: 12,
-        padding: 16,
-        borderWidth: 1,
-        borderColor: "#e2e8f0",
-    },
-    cardTitle:
+    sectionTitle:
     {
         fontSize: 16,
         fontWeight: "700",
         color: "#0f172a",
-        marginBottom: 10,
-    },
-    cardText:
-    {
-        fontSize: 14,
-        color: "#334155",
-        marginBottom: 6,
+        marginBottom: 12,
+        marginTop: 2,
     },
 });

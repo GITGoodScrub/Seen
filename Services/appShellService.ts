@@ -5,16 +5,31 @@ const appTabs: AppTabItem[] = [
         key: "home",
         label: "Home",
         title: "Home",
+        iconLabel: "H",
     },
     {
-        key: "people",
-        label: "People",
-        title: "People",
+        key: "discover",
+        label: "Discover",
+        title: "Discover",
+        iconLabel: "D",
+    },
+    {
+        key: "friends",
+        label: "Friends",
+        title: "Friends",
+        iconLabel: "F",
+    },
+    {
+        key: "notifications",
+        label: "Notifications",
+        title: "Notifications",
+        iconLabel: "N",
     },
     {
         key: "profile",
         label: "Profile",
         title: "Profile",
+        iconLabel: "P",
     },
 ];
 

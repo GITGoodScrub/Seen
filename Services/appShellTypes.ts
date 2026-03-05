@@ -1,7 +1,8 @@
-export type AppTabKey = "home" | "people" | "profile";
+export type AppTabKey = "home" | "discover" | "friends" | "notifications" | "profile";
 
 export type AppTabItem = {
     key: AppTabKey;
     label: string;
     title: string;
+    iconLabel: string;
 };

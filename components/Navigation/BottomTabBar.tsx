@@ -1,5 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { AppTabItem, AppTabKey } from "../../Services";
+import { higLayout } from "../../constants";
+import { TabImagePlaceholder } from "./TabImagePlaceholder";
 
 type BottomTabBarProps = {
     tabs: AppTabItem[];
@@ -31,6 +33,11 @@ export const BottomTabBar = (
                             ]}
                             onPress={() => onTabPress(tab.key)}
                         >
+                            <TabImagePlaceholder
+                                label={tab.iconLabel}
+                                isActive={isActive}
+                            />
+
                             <Text
                                 style={[
                                     styles.tabText,
@@ -53,7 +60,7 @@ const styles = StyleSheet.create(
     {
         flexDirection: "row",
         borderTopWidth: 1,
-        borderTopColor: "#dce2ea",
+        borderTopColor: "#d9dee5",
         backgroundColor: "#ffffff",
     },
     tabButton:
@@ -61,17 +68,17 @@ const styles = StyleSheet.create(
         flex: 1,
         alignItems: "center",
         justifyContent: "center",
-        paddingVertical: 14,
+        paddingTop: higLayout.tabBarItemTopPadding,
+        paddingBottom: higLayout.tabBarItemBottomPadding,
+        minHeight: higLayout.minTouchTargetSize + 6,
     },
     activeTabButton:
     {
-        borderTopWidth: 2,
-        borderTopColor: "#2563eb",
-        backgroundColor: "#f4f8ff",
+        backgroundColor: "#f5f8ff",
     },
     tabText:
     {
-        fontSize: 14,
+        fontSize: higLayout.tabBarLabelFontSize,
         fontWeight: "600",
         color: "#64748b",
     },

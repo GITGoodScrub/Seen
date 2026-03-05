@@ -1,8 +1,11 @@
 import { AppShellScreen } from "./screens";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 export default function App()
 {
     return (
-        <AppShellScreen />
+        <SafeAreaProvider>
+            <AppShellScreen />
+        </SafeAreaProvider>
     );
 }
