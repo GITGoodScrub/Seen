@@ -1,40 +1,49 @@
+import { requestJsonWithFailover } from "./apiClientService";
 import { UserItem, UsersResponse } from "./types";
 
 const usersRoute = "/api/users";
 
-const normalizeBaseUrl = (baseUrl: string): string =>
+const isUserItem = (value: unknown): value is UserItem =>
 {
-    return baseUrl.replace(/\/+$/, "");
-};
-
-const getApiBaseUrl = (): string =>
-{
-    const baseUrl = process.env.EXPO_PUBLIC_API_BASE_URL;
-
-    if (!baseUrl || !baseUrl.trim())
+    if (!value || typeof value !== "object")
     {
-        throw new Error("EXPO_PUBLIC_API_BASE_URL is not set");
+        return false;
     }
 
-    return normalizeBaseUrl(baseUrl.trim());
+    const candidate = value as {
+        id?: unknown;
+        username?: unknown;
+        type?: unknown;
+    };
+
+    return (
+        typeof candidate.id === "number"
+        && typeof candidate.username === "string"
+        && typeof candidate.type === "string"
+    );
 };
 
-export const loadUsers = async (): Promise<UserItem[]> =>
+const getUsersFromPayload = (payload: unknown): UserItem[] =>
 {
-    const baseUrl = getApiBaseUrl();
-    const response = await fetch(`${baseUrl}${usersRoute}`);
-
-    if (!response.ok)
-    {
-        throw new Error(`Request failed with ${response.status}`);
-    }
-
-    const payload = (await response.json()) as UsersResponse;
-
-    if (!Array.isArray(payload.users))
+    if (!payload || typeof payload !== "object")
     {
         return [];
     }
 
-    return payload.users;
+    const usersPayload = (payload as UsersResponse).users;
+
+    if (!Array.isArray(usersPayload))
+    {
+        return [];
+    }
+
+    return usersPayload.filter(
+        (entry) => isUserItem(entry),
+    );
+};
+
+export const loadUsers = async (): Promise<UserItem[]> =>
+{
+    const payload = await requestJsonWithFailover<unknown>(usersRoute);
+    return getUsersFromPayload(payload);
 };

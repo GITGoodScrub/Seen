@@ -1,8 +1,8 @@
-import { UsersScreen } from "./screens";
+import { AppShellScreen } from "./screens";
 
 export default function App()
 {
     return (
-        <UsersScreen />
+        <AppShellScreen />
     );
 }
