@@ -1,12 +1,12 @@
 import { StyleSheet, Text, View } from "react-native";
-import { CreatePostField, PostCard } from "../components";
+import { FeedSearchBar, PostCard } from "../components";
 
 export const HomeScreen = () =>
 {
     return (
         <View style={styles.container}>
-            <CreatePostField
-                placeholderText="What's on your mind?"
+            <FeedSearchBar
+                placeholderText="Search people, venues, and posts"
             />
 
             <Text style={styles.sectionTitle}>Feed</Text>

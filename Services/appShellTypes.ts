@@ -1,4 +1,4 @@
-export type AppTabKey = "home" | "discover" | "friends" | "notifications" | "profile";
+export type AppTabKey = "home" | "discover" | "saved" | "notifications" | "profile";
 
 export type AppTabItem = {
     key: AppTabKey;

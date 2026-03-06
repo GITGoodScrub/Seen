@@ -12,7 +12,7 @@ import { DiscoverScreen } from "./DiscoverScreen";
 import { HomeScreen } from "./HomeScreen";
 import { NotificationsScreen } from "./NotificationsScreen";
 import { ProfileScreen } from "./ProfileScreen";
-import { UsersScreen } from "./UsersScreen";
+import { SavedEventsScreen } from "./SavedEventsScreen";
 
 const renderActiveScreen = (activeTabKey: AppTabKey) =>
 {
@@ -26,9 +26,9 @@ const renderActiveScreen = (activeTabKey: AppTabKey) =>
         return <DiscoverScreen />;
     }
 
-    if (activeTabKey === "friends")
+    if (activeTabKey === "saved")
     {
-        return <UsersScreen />;
+        return <SavedEventsScreen />;
     }
 
     if (activeTabKey === "notifications")

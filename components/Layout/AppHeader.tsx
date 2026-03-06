@@ -3,13 +3,13 @@ import { higLayout } from "../../constants";
 
 type AppHeaderProps = {
     onMenuPress?: () => void;
-    onSearchPress?: () => void;
+    onNewPostPress?: () => void;
 };
 
 export const AppHeader = (
     {
         onMenuPress,
-        onSearchPress,
+        onNewPostPress,
     }: AppHeaderProps,
 ) =>
 {
@@ -28,10 +28,10 @@ export const AppHeader = (
 
             <Pressable
                 style={styles.iconButton}
-                onPress={onSearchPress}
+                onPress={onNewPostPress}
             >
-                <View style={styles.searchCircle} />
-                <View style={styles.searchHandle} />
+                <View style={styles.plusHorizontal} />
+                <View style={styles.plusVertical} />
             </Pressable>
         </View>
     );
@@ -74,22 +74,19 @@ const styles = StyleSheet.create(
         marginVertical: 2,
         borderRadius: 2,
     },
-    searchCircle:
+    plusHorizontal:
     {
-        width: 14,
-        height: 14,
-        borderWidth: 2,
-        borderColor: "#111827",
-        borderRadius: 7,
-    },
-    searchHandle:
-    {
-        width: 8,
+        width: 16,
         height: 2,
         backgroundColor: "#111827",
         borderRadius: 2,
-        transform: [{ rotate: "45deg" }],
-        marginTop: 1,
-        marginLeft: 10,
+    },
+    plusVertical:
+    {
+        width: 2,
+        height: 16,
+        backgroundColor: "#111827",
+        borderRadius: 2,
+        position: "absolute",
     },
 });

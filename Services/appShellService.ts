@@ -14,10 +14,10 @@ const appTabs: AppTabItem[] = [
         iconLabel: "D",
     },
     {
-        key: "friends",
-        label: "Friends",
-        title: "Friends",
-        iconLabel: "F",
+        key: "saved",
+        label: "Saved",
+        title: "Saved",
+        iconLabel: "S",
     },
     {
         key: "notifications",

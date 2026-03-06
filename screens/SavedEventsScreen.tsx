@@ -1,17 +1,12 @@
 import { StyleSheet, Text, View } from "react-native";
-import { FeedSearchBar } from "../components";
 
-export const DiscoverScreen = () =>
+export const SavedEventsScreen = () =>
 {
     return (
         <View style={styles.container}>
-            <FeedSearchBar
-                placeholderText="Search people, venues, and posts"
-            />
-
             <View style={styles.card}>
-                <Text style={styles.title}>Discover</Text>
-                <Text style={styles.bodyText}>Placeholder content for discover modules.</Text>
+                <Text style={styles.title}>Saved Events</Text>
+                <Text style={styles.bodyText}>Placeholder content for saved events in the future.</Text>
             </View>
         </View>
     );
