@@ -1,14 +1,22 @@
-import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, FlatList, StyleSheet, Text, View } from "react-native";
-import { UserListItem } from "../components/User";
+import {
+    ActivityIndicator,
+    FlatList,
+    RefreshControl,
+    StyleSheet,
+    Text,
+    View,
+} from "react-native";
+import { RequestErrorState, UserListItem } from "../components";
 import { loadUsers, UserItem } from "../Services";
 
 export const UsersScreen = () =>
 {
     const [users, setUsers] = useState<UserItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [isRefreshing, setIsRefreshing] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const [requestVersion, setRequestVersion] = useState(0);
 
     useEffect(() =>
     {
@@ -17,6 +25,8 @@ export const UsersScreen = () =>
 
         const initializeUsers = async (): Promise<void> =>
         {
+            setIsLoading(true);
+
             try
             {
                 const loadedUsers = await loadUsers();
@@ -57,27 +67,86 @@ export const UsersScreen = () =>
         {
             isCancelled = true;
         };
-    }, []);
+    }, [requestVersion]);
+
+    const handleRetryPress = (): void =>
+    {
+        setRequestVersion(
+            (currentVersion) => currentVersion + 1,
+        );
+    };
+
+    const handleRefresh = async (): Promise<void> =>
+    {
+        setIsRefreshing(true);
+
+        try
+        {
+            const loadedUsers = await loadUsers();
+            setUsers(loadedUsers);
+            setErrorMessage(null);
+        }
+        catch (caughtError)
+        {
+            const message = caughtError instanceof Error
+                ? caughtError.message
+                : "Failed to refresh users";
+
+            setErrorMessage(message);
+        }
+        finally
+        {
+            setIsRefreshing(false);
+        }
+    };
+
+    if (isLoading && users.length === 0)
+    {
+        return (
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" />
+            </View>
+        );
+    }
+
+    if (errorMessage && users.length === 0)
+    {
+        return (
+            <View style={styles.container}>
+                <RequestErrorState
+                    message={errorMessage}
+                    onRetryPress={handleRetryPress}
+                />
+            </View>
+        );
+    }
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Seen Users</Text>
-
-            {isLoading ? (
-                <ActivityIndicator size="large" />
-            ) : errorMessage ? (
-                <Text style={styles.error}>{errorMessage}</Text>
-            ) : (
-                <FlatList
-                    data={users}
-                    keyExtractor={(item) => item.id.toString()}
-                    renderItem={({ item }) => (
-                        <UserListItem user={item} />
-                    )}
-                />
-            )}
-
-            <StatusBar style="auto" />
+            <FlatList
+                data={users}
+                keyExtractor={(item) => item.id.toString()}
+                contentContainerStyle={styles.listContent}
+                renderItem={({ item }) => (
+                    <UserListItem user={item} />
+                )}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={isRefreshing}
+                        onRefresh={handleRefresh}
+                    />
+                }
+                ListHeaderComponent={
+                    errorMessage ? (
+                        <Text style={styles.warningText}>
+                            Showing last loaded users. Refresh failed: {errorMessage}
+                        </Text>
+                    ) : null
+                }
+                ListEmptyComponent={
+                    <Text style={styles.emptyText}>No users available.</Text>
+                }
+            />
         </View>
     );
 };
@@ -87,19 +156,39 @@ const styles = StyleSheet.create(
     container:
     {
         flex: 1,
-        backgroundColor: "#fff",
-        paddingTop: 64,
+        backgroundColor: "#f8fafc",
+        paddingTop: 20,
         paddingHorizontal: 20,
     },
-    title:
+    loadingContainer:
     {
-        fontSize: 24,
-        fontWeight: "700",
-        marginBottom: 16,
+        flex: 1,
+        backgroundColor: "#f8fafc",
+        justifyContent: "center",
+        alignItems: "center",
+        paddingHorizontal: 20,
     },
-    error:
+    listContent:
     {
-        color: "#c0392b",
+        paddingBottom: 20,
+    },
+    warningText:
+    {
+        fontSize: 13,
+        lineHeight: 18,
+        color: "#92400e",
+        backgroundColor: "#fef3c7",
+        borderColor: "#fcd34d",
+        borderWidth: 1,
+        borderRadius: 10,
+        paddingVertical: 8,
+        paddingHorizontal: 10,
+        marginBottom: 12,
+    },
+    emptyText:
+    {
         fontSize: 14,
+        color: "#64748b",
+        paddingTop: 12,
     },
 });
