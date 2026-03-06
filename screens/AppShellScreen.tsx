@@ -1,29 +1,52 @@
 import { StatusBar } from "expo-status-bar";
-import { useMemo, useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { useMemo, useRef, useState } from "react";
+import { Animated, Easing, Pressable, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { AppHeader, BottomTabBar } from "../components";
+import { AppHeader, BottomTabBar, SideMenuDrawer } from "../components";
+import { higLayout } from "../constants";
 import {
     AppTabKey,
+    SideMenuItem,
+    buildUpdatedRecentSearches,
     getAppTabs,
     getDefaultTabKey,
+    getDefaultRecentSearches,
+    getSideMenuItems,
 } from "../Services";
 import { DiscoverScreen } from "./DiscoverScreen";
 import { HomeScreen } from "./HomeScreen";
+import { NewPostScreen } from "./NewPostScreen";
 import { NotificationsScreen } from "./NotificationsScreen";
 import { ProfileScreen } from "./ProfileScreen";
 import { SavedEventsScreen } from "./SavedEventsScreen";
+import { SearchScreen } from "./SearchScreen";
 
-const renderActiveScreen = (activeTabKey: AppTabKey) =>
+const appTabKeys: AppTabKey[] = [
+    "home",
+    "discover",
+    "saved",
+    "notifications",
+    "profile",
+];
+
+const isAppTabKey = (value: string): value is AppTabKey =>
+{
+    return appTabKeys.includes(value as AppTabKey);
+};
+
+const renderActiveScreen = (
+    activeTabKey: AppTabKey,
+    onSearchPress: () => void,
+) =>
 {
     if (activeTabKey === "home")
     {
-        return <HomeScreen />;
+        return <HomeScreen onSearchPress={onSearchPress} />;
     }
 
     if (activeTabKey === "discover")
     {
-        return <DiscoverScreen />;
+        return <DiscoverScreen onSearchPress={onSearchPress} />;
     }
 
     if (activeTabKey === "saved")
@@ -41,7 +64,7 @@ const renderActiveScreen = (activeTabKey: AppTabKey) =>
         return <ProfileScreen />;
     }
 
-    return <HomeScreen />;
+    return <HomeScreen onSearchPress={onSearchPress} />;
 };
 
 export const AppShellScreen = () =>
@@ -50,35 +73,277 @@ export const AppShellScreen = () =>
         () => getAppTabs(),
         [],
     );
+    const sideMenuItems = useMemo(
+        () => getSideMenuItems(),
+        [],
+    );
     const [activeTabKey, setActiveTabKey] = useState<AppTabKey>(
         getDefaultTabKey(),
     );
+    const [isNewPostOpen, setIsNewPostOpen] = useState(false);
+    const [isSearchOpen, setIsSearchOpen] = useState(false);
+    const [isSideMenuVisible, setIsSideMenuVisible] = useState(false);
+    const [recentSearches, setRecentSearches] = useState<string[]>(
+        getDefaultRecentSearches(),
+    );
+    const sideMenuProgress = useRef(
+        new Animated.Value(0),
+    ).current;
+
+    const openSideMenu = (): void =>
+    {
+        if (isSideMenuVisible)
+        {
+            return;
+        }
+
+        setIsSideMenuVisible(true);
+        Animated.timing(
+            sideMenuProgress,
+            {
+                toValue: 1,
+                duration: higLayout.sideMenuAnimationDurationMs,
+                easing: Easing.out(Easing.cubic),
+                useNativeDriver: true,
+            },
+        ).start();
+    };
+
+    const closeSideMenu = (): void =>
+    {
+        if (!isSideMenuVisible)
+        {
+            return;
+        }
+
+        Animated.timing(
+            sideMenuProgress,
+            {
+                toValue: 0,
+                duration: higLayout.sideMenuAnimationDurationMs,
+                easing: Easing.out(Easing.cubic),
+                useNativeDriver: true,
+            },
+        ).start(
+            () =>
+            {
+                setIsSideMenuVisible(false);
+            },
+        );
+    };
+
+    const resetSideMenu = (): void =>
+    {
+        sideMenuProgress.stopAnimation();
+        sideMenuProgress.setValue(0);
+        setIsSideMenuVisible(false);
+    };
+
+    const handleToggleSideMenu = (): void =>
+    {
+        if (isSideMenuVisible)
+        {
+            closeSideMenu();
+            return;
+        }
+
+        openSideMenu();
+    };
+
+    const handleSideMenuItemPress = (menuItem: SideMenuItem): void =>
+    {
+        if (isAppTabKey(menuItem.key))
+        {
+            setActiveTabKey(menuItem.key);
+        }
+
+        setIsSearchOpen(false);
+        closeSideMenu();
+    };
+
+    const handleTabPress = (nextTabKey: AppTabKey): void =>
+    {
+        setActiveTabKey(nextTabKey);
+
+        if (isSideMenuVisible)
+        {
+            closeSideMenu();
+        }
+    };
+
+    const handleOpenNewPost = (): void =>
+    {
+        resetSideMenu();
+        setIsSearchOpen(false);
+        setIsNewPostOpen(true);
+    };
+
+    const handleCloseNewPost = (): void =>
+    {
+        setIsNewPostOpen(false);
+    };
+
+    const handleOpenSearch = (): void =>
+    {
+        resetSideMenu();
+        setIsSearchOpen(true);
+    };
+
+    const handleCloseSearch = (): void =>
+    {
+        setIsSearchOpen(false);
+    };
+
+    const handleSearchSubmit = (searchQuery: string): void =>
+    {
+        setRecentSearches(
+            (currentRecentSearches) => buildUpdatedRecentSearches(currentRecentSearches, searchQuery),
+        );
+    };
+
+    const handleClearRecentSearches = (): void =>
+    {
+        setRecentSearches([]);
+    };
+
+    const sideMenuTranslateX = sideMenuProgress.interpolate(
+        {
+            inputRange: [0, 1],
+            outputRange: [-higLayout.sideMenuWidth, 0],
+        },
+    );
+    const mainContentTranslateX = sideMenuProgress.interpolate(
+        {
+            inputRange: [0, 1],
+            outputRange: [0, higLayout.sideMenuWidth],
+        },
+    );
+    const mainOverlayOpacity = sideMenuProgress.interpolate(
+        {
+            inputRange: [0, 1],
+            outputRange: [0, higLayout.sideMenuOverlayOpacity],
+        },
+    );
+
+    if (isNewPostOpen)
+    {
+        return (
+            <View style={styles.container}>
+                <StatusBar style="dark" />
+
+                <SafeAreaView
+                    edges={["top", "bottom"]}
+                    style={styles.composeSafeArea}
+                >
+                    <NewPostScreen onClose={handleCloseNewPost} />
+                </SafeAreaView>
+            </View>
+        );
+    }
+
+    if (isSearchOpen)
+    {
+        return (
+            <View style={styles.container}>
+                <StatusBar style="dark" />
+
+                <SafeAreaView
+                    edges={["top", "bottom"]}
+                    style={styles.searchSafeArea}
+                >
+                    <SearchScreen
+                        recentSearches={recentSearches}
+                        onClose={handleCloseSearch}
+                        onSearchSubmit={handleSearchSubmit}
+                        onClearRecentSearches={handleClearRecentSearches}
+                    />
+                </SafeAreaView>
+            </View>
+        );
+    }
 
     return (
         <View style={styles.container}>
             <StatusBar style="dark" />
 
-            <SafeAreaView
-                edges={["top"]}
-                style={styles.headerSafeArea}
+            <Animated.View
+                pointerEvents={isSideMenuVisible ? "auto" : "none"}
+                style={[
+                    styles.sideMenuLayer,
+                    {
+                        width: higLayout.sideMenuWidth,
+                        transform: [
+                            {
+                                translateX: sideMenuTranslateX,
+                            },
+                        ],
+                    },
+                ]}
             >
-                <AppHeader />
-            </SafeAreaView>
+                <SafeAreaView
+                    edges={["top", "bottom"]}
+                    style={styles.sideMenuSafeArea}
+                >
+                    <SideMenuDrawer
+                        items={sideMenuItems}
+                        onItemPress={handleSideMenuItemPress}
+                    />
+                </SafeAreaView>
+            </Animated.View>
 
-            <View style={styles.screenContainer}>
-                {renderActiveScreen(activeTabKey)}
-            </View>
-
-            <SafeAreaView
-                edges={["bottom"]}
-                style={styles.navSafeArea}
+            <Animated.View
+                style={[
+                    styles.mainLayer,
+                    {
+                        transform: [
+                            {
+                                translateX: mainContentTranslateX,
+                            },
+                        ],
+                    },
+                ]}
             >
-                <BottomTabBar
-                    tabs={tabs}
-                    activeTabKey={activeTabKey}
-                    onTabPress={setActiveTabKey}
-                />
-            </SafeAreaView>
+                <SafeAreaView
+                    edges={["top"]}
+                    style={styles.headerSafeArea}
+                >
+                    <AppHeader
+                        onMenuPress={handleToggleSideMenu}
+                        onNewPostPress={handleOpenNewPost}
+                    />
+                </SafeAreaView>
+
+                <View style={styles.screenContainer}>
+                    {renderActiveScreen(activeTabKey, handleOpenSearch)}
+                </View>
+
+                <SafeAreaView
+                    edges={["bottom"]}
+                    style={styles.navSafeArea}
+                >
+                    <BottomTabBar
+                        tabs={tabs}
+                        activeTabKey={activeTabKey}
+                        onTabPress={handleTabPress}
+                    />
+                </SafeAreaView>
+
+                {isSideMenuVisible ? (
+                    <Pressable
+                        style={styles.mainDismissLayer}
+                        onPress={closeSideMenu}
+                    >
+                        <Animated.View
+                            style={[
+                                styles.mainDismissTint,
+                                {
+                                    opacity: mainOverlayOpacity,
+                                },
+                            ]}
+                        />
+                    </Pressable>
+                ) : null}
+            </Animated.View>
         </View>
     );
 };
@@ -89,6 +354,33 @@ const styles = StyleSheet.create(
     {
         flex: 1,
         backgroundColor: "#f8fafc",
+    },
+    sideMenuLayer:
+    {
+        position: "absolute",
+        left: 0,
+        top: 0,
+        bottom: 0,
+        zIndex: 2,
+    },
+    sideMenuSafeArea:
+    {
+        flex: 1,
+        backgroundColor: "#ffffff",
+    },
+    mainLayer:
+    {
+        flex: 1,
+        zIndex: 3,
+        backgroundColor: "#f8fafc",
+        shadowColor: "#0f172a",
+        shadowOpacity: 0.15,
+        shadowRadius: 10,
+        shadowOffset: {
+            width: -1,
+            height: 0,
+        },
+        elevation: 8,
     },
     screenContainer:
     {
@@ -101,5 +393,24 @@ const styles = StyleSheet.create(
     navSafeArea:
     {
         backgroundColor: "#ffffff",
+    },
+    composeSafeArea:
+    {
+        flex: 1,
+        backgroundColor: "#f8fafc",
+    },
+    searchSafeArea:
+    {
+        flex: 1,
+        backgroundColor: "#f8fafc",
+    },
+    mainDismissLayer:
+    {
+        ...StyleSheet.absoluteFillObject,
+    },
+    mainDismissTint:
+    {
+        flex: 1,
+        backgroundColor: "#0f172a",
     },
 });

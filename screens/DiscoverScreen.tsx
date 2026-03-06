@@ -1,12 +1,19 @@
 import { StyleSheet, Text, View } from "react-native";
 import { FeedSearchBar } from "../components";
 
-export const DiscoverScreen = () =>
+type DiscoverScreenProps = {
+    onSearchPress?: () => void;
+};
+
+export const DiscoverScreen = (
+    { onSearchPress }: DiscoverScreenProps,
+) =>
 {
     return (
         <View style={styles.container}>
             <FeedSearchBar
                 placeholderText="Search people, venues, and posts"
+                onPress={onSearchPress}
             />
 
             <View style={styles.card}>

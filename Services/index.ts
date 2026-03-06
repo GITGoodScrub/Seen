@@ -3,3 +3,7 @@ export * from "./userService";
 export * from "./apiClientService";
 export * from "./appShellTypes";
 export * from "./appShellService";
+export * from "./searchTypes";
+export * from "./searchService";
+export * from "./sideMenuTypes";
+export * from "./sideMenuService";

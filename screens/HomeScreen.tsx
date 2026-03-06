@@ -1,12 +1,19 @@
 import { StyleSheet, Text, View } from "react-native";
 import { FeedSearchBar, PostCard } from "../components";
 
-export const HomeScreen = () =>
+type HomeScreenProps = {
+    onSearchPress?: () => void;
+};
+
+export const HomeScreen = (
+    { onSearchPress }: HomeScreenProps,
+) =>
 {
     return (
         <View style={styles.container}>
             <FeedSearchBar
                 placeholderText="Search people, venues, and posts"
+                onPress={onSearchPress}
             />
 
             <Text style={styles.sectionTitle}>Feed</Text>
