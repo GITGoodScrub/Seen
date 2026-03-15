@@ -8,4 +8,7 @@ export const higLayout = {
     tabBarItemTopPadding: 6,
     tabBarItemBottomPadding: 4,
     tabBarLabelFontSize: 12,
+    sideMenuWidth: 280,
+    sideMenuAnimationDurationMs: 220,
+    sideMenuOverlayOpacity: 0.12,
 };
