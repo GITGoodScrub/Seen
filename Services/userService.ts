@@ -13,12 +13,22 @@ const isUserItem = (value: unknown): value is UserItem =>
     const candidate = value as {
         id?: unknown;
         username?: unknown;
+        email?: unknown;
         type?: unknown;
     };
 
     return (
         typeof candidate.id === "number"
-        && typeof candidate.username === "string"
+        && (
+            candidate.username === null
+            || candidate.username === undefined
+            || typeof candidate.username === "string"
+        )
+        && (
+            candidate.email === null
+            || candidate.email === undefined
+            || typeof candidate.email === "string"
+        )
         && typeof candidate.type === "string"
     );
 };

@@ -9,9 +9,11 @@ export const UserListItem = (
     { user }: UserListItemProps,
 ) =>
 {
+    const displayName = user.username ?? user.email ?? `User #${user.id}`;
+
     return (
         <Text style={styles.item}>
-            {user.username} ({user.type})
+            {displayName} ({user.type})
         </Text>
     );
 };

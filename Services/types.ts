@@ -1,6 +1,7 @@
 export type UserItem = {
     id: number;
-    username: string;
+    username: string | null;
+    email?: string | null;
     type: string;
 };
 

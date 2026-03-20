@@ -36,6 +36,11 @@ const sideMenuItems: SideMenuItem[] = [
         label: "Help",
         description: "Support and documentation (placeholder)",
     },
+    {
+        key: "logout",
+        label: "Log Out",
+        description: "Sign out of your account",
+    },
 ];
 
 export const getSideMenuItems = (): SideMenuItem[] =>

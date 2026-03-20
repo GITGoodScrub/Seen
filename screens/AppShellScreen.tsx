@@ -21,6 +21,10 @@ import { ProfileScreen } from "./ProfileScreen";
 import { SavedEventsScreen } from "./SavedEventsScreen";
 import { SearchScreen } from "./SearchScreen";
 
+type AppShellScreenProps = {
+    onLogout?: () => void;
+};
+
 const appTabKeys: AppTabKey[] = [
     "home",
     "discover",
@@ -67,7 +71,9 @@ const renderActiveScreen = (
     return <HomeScreen onSearchPress={onSearchPress} />;
 };
 
-export const AppShellScreen = () =>
+export const AppShellScreen = (
+    { onLogout }: AppShellScreenProps,
+) =>
 {
     const tabs = useMemo(
         () => getAppTabs(),
@@ -152,6 +158,14 @@ export const AppShellScreen = () =>
 
     const handleSideMenuItemPress = (menuItem: SideMenuItem): void =>
     {
+        if (menuItem.key === "logout")
+        {
+            setIsSearchOpen(false);
+            closeSideMenu();
+            onLogout?.();
+            return;
+        }
+
         if (isAppTabKey(menuItem.key))
         {
             setActiveTabKey(menuItem.key);

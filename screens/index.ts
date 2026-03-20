@@ -1,4 +1,5 @@
 export * from "./AppShellScreen";
+export * from "./AuthScreen";
 export * from "./DiscoverScreen";
 export * from "./HomeScreen";
 export * from "./NewPostScreen";

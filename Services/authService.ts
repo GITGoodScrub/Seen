@@ -1,0 +1,227 @@
+import { getApp, getApps, initializeApp } from "firebase/app";
+import {
+    GoogleAuthProvider,
+    User,
+    createUserWithEmailAndPassword,
+    getAuth,
+    onAuthStateChanged,
+    signInWithCredential,
+    signInWithEmailAndPassword,
+    signOut,
+} from "firebase/auth";
+import { requestJsonWithFailover, setApiAuthToken } from "./apiClientService";
+import { AuthSession, GoogleTokenSet, VerifyAuthResponse } from "./authTypes";
+
+const authVerifyRoute = "/api/auth/verify";
+
+const firebaseConfig = {
+    apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
+    authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
+    projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
+    storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+    appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
+};
+
+let cachedFirebaseAuth: ReturnType<typeof getAuth> | null = null;
+
+const getMissingFirebaseConfigKeys = (): string[] =>
+{
+    const requiredConfigEntries: Array<{
+        key: string;
+        value: string | undefined;
+    }> = [
+        {
+            key: "EXPO_PUBLIC_FIREBASE_API_KEY",
+            value: firebaseConfig.apiKey,
+        },
+        {
+            key: "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN",
+            value: firebaseConfig.authDomain,
+        },
+        {
+            key: "EXPO_PUBLIC_FIREBASE_PROJECT_ID",
+            value: firebaseConfig.projectId,
+        },
+        {
+            key: "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET",
+            value: firebaseConfig.storageBucket,
+        },
+        {
+            key: "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID",
+            value: firebaseConfig.messagingSenderId,
+        },
+        {
+            key: "EXPO_PUBLIC_FIREBASE_APP_ID",
+            value: firebaseConfig.appId,
+        },
+    ];
+
+    return requiredConfigEntries
+        .filter(
+            (entry) => !entry.value,
+        )
+        .map(
+            (entry) => entry.key,
+        );
+};
+
+const getFirebaseConfigError = (): string =>
+{
+    const missingKeys = getMissingFirebaseConfigKeys();
+
+    if (missingKeys.length === 0)
+    {
+        return "Firebase configuration is missing.";
+    }
+
+    return `Missing Firebase env vars: ${missingKeys.join(", ")}`;
+};
+
+export const isFirebaseConfigured = (): boolean =>
+{
+    return getMissingFirebaseConfigKeys().length === 0;
+};
+
+export const getErrorMessageFromUnknown = (caughtError: unknown): string =>
+{
+    if (caughtError instanceof Error)
+    {
+        return caughtError.message;
+    }
+
+    return "Unexpected authentication error.";
+};
+
+const getFirebaseAuth = (): ReturnType<typeof getAuth> =>
+{
+    if (!isFirebaseConfigured())
+    {
+        throw new Error(getFirebaseConfigError());
+    }
+
+    if (cachedFirebaseAuth)
+    {
+        return cachedFirebaseAuth;
+    }
+
+    const firebaseApp = getApps().length > 0
+        ? getApp()
+        : initializeApp(firebaseConfig);
+
+    cachedFirebaseAuth = getAuth(firebaseApp);
+    return cachedFirebaseAuth;
+};
+
+const verifyFirebaseTokenWithBackend = async (idToken: string): Promise<AuthSession> =>
+{
+    const responsePayload = await requestJsonWithFailover<VerifyAuthResponse>(
+        authVerifyRoute,
+        {
+            headers: {
+                Authorization: `Bearer ${idToken}`,
+            },
+        },
+    );
+
+    if (!responsePayload || responsePayload.ok !== true || !responsePayload.user)
+    {
+        throw new Error("Backend auth verification failed.");
+    }
+
+    setApiAuthToken(idToken);
+
+    return {
+        idToken,
+        user: responsePayload.user,
+    };
+};
+
+const finalizeFirebaseUserAuth = async (firebaseUser: User): Promise<AuthSession> =>
+{
+    const idToken = await firebaseUser.getIdToken();
+    return verifyFirebaseTokenWithBackend(idToken);
+};
+
+export const signUpWithEmail = async (
+    email: string,
+    password: string,
+): Promise<AuthSession> =>
+{
+    const auth = getFirebaseAuth();
+    const credential = await createUserWithEmailAndPassword(auth, email, password);
+    return finalizeFirebaseUserAuth(credential.user);
+};
+
+export const signInWithEmail = async (
+    email: string,
+    password: string,
+): Promise<AuthSession> =>
+{
+    const auth = getFirebaseAuth();
+    const credential = await signInWithEmailAndPassword(auth, email, password);
+    return finalizeFirebaseUserAuth(credential.user);
+};
+
+export const signInWithGoogle = async (
+    tokenSet: GoogleTokenSet,
+): Promise<AuthSession> =>
+{
+    const auth = getFirebaseAuth();
+
+    const idToken = tokenSet.idToken ?? null;
+    const accessToken = tokenSet.accessToken ?? null;
+
+    if (!idToken && !accessToken)
+    {
+        throw new Error("Google sign-in did not return a usable token.");
+    }
+
+    const credential = GoogleAuthProvider.credential(idToken, accessToken);
+    const userCredential = await signInWithCredential(auth, credential);
+
+    return finalizeFirebaseUserAuth(userCredential.user);
+};
+
+export const syncSessionWithBackend = async (
+    firebaseUser: User,
+): Promise<AuthSession> =>
+{
+    return finalizeFirebaseUserAuth(firebaseUser);
+};
+
+export const observeFirebaseAuthState = (
+    onUserChanged: (firebaseUser: User | null) => void,
+): (() => void) =>
+{
+    if (!isFirebaseConfigured())
+    {
+        setApiAuthToken(null);
+        onUserChanged(null);
+
+        return () =>
+        {
+            return;
+        };
+    }
+
+    const auth = getFirebaseAuth();
+
+    return onAuthStateChanged(
+        auth,
+        onUserChanged,
+    );
+};
+
+export const logoutFromSeen = async (): Promise<void> =>
+{
+    setApiAuthToken(null);
+
+    if (!isFirebaseConfigured())
+    {
+        return;
+    }
+
+    const auth = getFirebaseAuth();
+    await signOut(auth);
+};

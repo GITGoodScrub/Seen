@@ -7,3 +7,5 @@ export * from "./searchTypes";
 export * from "./searchService";
 export * from "./sideMenuTypes";
 export * from "./sideMenuService";
+export * from "./authTypes";
+export * from "./authService";

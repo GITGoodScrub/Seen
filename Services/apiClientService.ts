@@ -13,6 +13,12 @@ const defaultApiBaseUrls = [
 ];
 
 let preferredBaseUrl: string | null = null;
+let apiAuthToken: string | null = null;
+
+export const setApiAuthToken = (authToken: string | null): void =>
+{
+    apiAuthToken = authToken;
+};
 
 const normalizeBaseUrl = (baseUrl: string): string =>
 {
@@ -85,6 +91,26 @@ const getCandidateBaseUrls = (): string[] =>
             ...configuredBaseUrls,
         ]),
     );
+};
+
+const withAuthHeader = (requestInit: RequestInit): RequestInit =>
+{
+    if (!apiAuthToken)
+    {
+        return requestInit;
+    }
+
+    const headers = new Headers(requestInit.headers ?? {});
+
+    if (!headers.has("Authorization"))
+    {
+        headers.set("Authorization", `Bearer ${apiAuthToken}`);
+    }
+
+    return {
+        ...requestInit,
+        headers,
+    };
 };
 
 const shouldRetryResponse = (statusCode: number): boolean =>
@@ -177,6 +203,7 @@ export const requestJsonWithFailover = async <TResponse>(
 ): Promise<TResponse> =>
 {
     const normalizedRoute = normalizeRoute(route);
+    const requestInitWithAuth = withAuthHeader(requestInit);
     const failures: RequestFailure[] = [];
 
     for (const baseUrl of getCandidateBaseUrls())
@@ -189,7 +216,7 @@ export const requestJsonWithFailover = async <TResponse>(
             {
                 const response = await fetchWithTimeout(
                     requestUrl,
-                    requestInit,
+                    requestInitWithAuth,
                     requestTimeoutMs,
                 );
 
