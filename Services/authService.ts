@@ -1,14 +1,19 @@
 import { getApp, getApps, initializeApp } from "firebase/app";
 import {
+    Auth,
     GoogleAuthProvider,
     User,
     createUserWithEmailAndPassword,
     getAuth,
+    getReactNativePersistence,
+    initializeAuth,
     onAuthStateChanged,
     signInWithCredential,
     signInWithEmailAndPassword,
     signOut,
 } from "firebase/auth";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Platform } from "react-native";
 import { requestJsonWithFailover, setApiAuthToken } from "./apiClientService";
 import { AuthSession, GoogleTokenSet, VerifyAuthResponse } from "./authTypes";
 
@@ -23,7 +28,7 @@ const firebaseConfig = {
     appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
 };
 
-let cachedFirebaseAuth: ReturnType<typeof getAuth> | null = null;
+let cachedFirebaseAuth: Auth | null = null;
 
 const getMissingFirebaseConfigKeys = (): string[] =>
 {
@@ -93,7 +98,7 @@ export const getErrorMessageFromUnknown = (caughtError: unknown): string =>
     return "Unexpected authentication error.";
 };
 
-const getFirebaseAuth = (): ReturnType<typeof getAuth> =>
+const getFirebaseAuth = (): Auth =>
 {
     if (!isFirebaseConfigured())
     {
@@ -109,7 +114,27 @@ const getFirebaseAuth = (): ReturnType<typeof getAuth> =>
         ? getApp()
         : initializeApp(firebaseConfig);
 
-    cachedFirebaseAuth = getAuth(firebaseApp);
+    if (Platform.OS === "web")
+    {
+        cachedFirebaseAuth = getAuth(firebaseApp);
+        return cachedFirebaseAuth;
+    }
+
+    try
+    {
+        cachedFirebaseAuth = initializeAuth(
+            firebaseApp,
+            {
+                persistence: getReactNativePersistence(AsyncStorage),
+            },
+        );
+    }
+    catch
+    {
+        // initializeAuth throws when auth is already initialized; use existing instance in that case.
+        cachedFirebaseAuth = getAuth(firebaseApp);
+    }
+
     return cachedFirebaseAuth;
 };
 
