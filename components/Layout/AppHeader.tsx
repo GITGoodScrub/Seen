@@ -3,13 +3,15 @@ import { higLayout } from "../../constants";
 
 type AppHeaderProps = {
     onMenuPress?: () => void;
-    onNewPostPress?: () => void;
+    onRightActionPress?: () => void;
+    rightActionIcon?: "plus" | "settings";
 };
 
 export const AppHeader = (
     {
         onMenuPress,
-        onNewPostPress,
+        onRightActionPress,
+        rightActionIcon = "plus",
     }: AppHeaderProps,
 ) =>
 {
@@ -28,10 +30,22 @@ export const AppHeader = (
 
             <Pressable
                 style={styles.iconButton}
-                onPress={onNewPostPress}
+                onPress={onRightActionPress}
             >
-                <View style={styles.plusHorizontal} />
-                <View style={styles.plusVertical} />
+                {rightActionIcon === "settings" ? (
+                    <View style={styles.settingsIconOuter}>
+                        <View style={[styles.settingsTooth, styles.settingsToothTop]} />
+                        <View style={[styles.settingsTooth, styles.settingsToothBottom]} />
+                        <View style={[styles.settingsToothVertical, styles.settingsToothLeft]} />
+                        <View style={[styles.settingsToothVertical, styles.settingsToothRight]} />
+                        <View style={styles.settingsIconInner} />
+                    </View>
+                ) : (
+                    <>
+                        <View style={styles.plusHorizontal} />
+                        <View style={styles.plusVertical} />
+                    </>
+                )}
             </Pressable>
         </View>
     );
@@ -88,5 +102,54 @@ const styles = StyleSheet.create(
         backgroundColor: "#111827",
         borderRadius: 2,
         position: "absolute",
+    },
+    settingsIconOuter:
+    {
+        width: 18,
+        height: 18,
+        borderWidth: 2,
+        borderColor: "#111827",
+        borderRadius: 9,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    settingsIconInner:
+    {
+        width: 5,
+        height: 5,
+        borderRadius: 3,
+        backgroundColor: "#111827",
+    },
+    settingsTooth:
+    {
+        width: 4,
+        height: 2,
+        backgroundColor: "#111827",
+        borderRadius: 1,
+        position: "absolute",
+    },
+    settingsToothTop:
+    {
+        top: -3,
+    },
+    settingsToothBottom:
+    {
+        bottom: -3,
+    },
+    settingsToothVertical:
+    {
+        width: 2,
+        height: 4,
+        backgroundColor: "#111827",
+        borderRadius: 1,
+        position: "absolute",
+    },
+    settingsToothLeft:
+    {
+        left: -3,
+    },
+    settingsToothRight:
+    {
+        right: -3,
     },
 });

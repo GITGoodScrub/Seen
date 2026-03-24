@@ -14,7 +14,9 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
     AuthSession,
+    checkUsernameAvailability,
     getErrorMessageFromUnknown,
+    getUsernameValidationMessage,
     isFirebaseConfigured,
     signInWithEmail,
     signInWithGoogle,
@@ -67,6 +69,7 @@ export const AuthScreen = (
 {
     const [mode, setMode] = useState<AuthMode>("login");
     const [email, setEmail] = useState("");
+    const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [errorMessage, setErrorMessage] = useState<string | null>(initialErrorMessage);
@@ -171,6 +174,7 @@ export const AuthScreen = (
     const handleEmailAuth = async (): Promise<void> =>
     {
         const normalizedEmail = normalizeField(email).toLowerCase();
+        const normalizedUsername = normalizeField(username).toLowerCase();
 
         if (!isConfigured)
         {
@@ -182,6 +186,17 @@ export const AuthScreen = (
         {
             setErrorMessage("Please enter a valid email address.");
             return;
+        }
+
+        if (mode === "signup")
+        {
+            const usernameValidationMessage = getUsernameValidationMessage(normalizedUsername);
+
+            if (usernameValidationMessage)
+            {
+                setErrorMessage(usernameValidationMessage);
+                return;
+            }
         }
 
         if (password.length < minPasswordLength)
@@ -201,9 +216,25 @@ export const AuthScreen = (
 
         try
         {
-            const authSession = mode === "signup"
-                ? await signUpWithEmail(normalizedEmail, password)
-                : await signInWithEmail(normalizedEmail, password);
+            let authSession: AuthSession;
+
+            if (mode === "signup")
+            {
+                const isUsernameAvailable = await checkUsernameAvailability(normalizedUsername);
+
+                if (!isUsernameAvailable)
+                {
+                    setErrorMessage("That username is already taken. Try another one.");
+                    setIsSubmitting(false);
+                    return;
+                }
+
+                authSession = await signUpWithEmail(normalizedEmail, password, normalizedUsername);
+            }
+            else
+            {
+                authSession = await signInWithEmail(normalizedEmail, password);
+            }
 
             onAuthSuccess(authSession);
         }
@@ -318,6 +349,17 @@ export const AuthScreen = (
                             onChangeText={setEmail}
                             editable={!isSubmitting}
                         />
+
+                        {mode === "signup" ? (
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Username (a-z, 0-9, _)"
+                                autoCapitalize="none"
+                                value={username}
+                                onChangeText={setUsername}
+                                editable={!isSubmitting}
+                            />
+                        ) : null}
 
                         <TextInput
                             style={styles.input}

@@ -5,6 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { AppHeader, BottomTabBar, SideMenuDrawer } from "../components";
 import { higLayout } from "../constants";
 import {
+    AuthSession,
     AppTabKey,
     SideMenuItem,
     buildUpdatedRecentSearches,
@@ -22,6 +23,8 @@ import { SavedEventsScreen } from "./SavedEventsScreen";
 import { SearchScreen } from "./SearchScreen";
 
 type AppShellScreenProps = {
+    authSession: AuthSession;
+    onSessionUpdate?: (nextSession: AuthSession) => void;
     onLogout?: () => void;
 };
 
@@ -41,6 +44,11 @@ const isAppTabKey = (value: string): value is AppTabKey =>
 const renderActiveScreen = (
     activeTabKey: AppTabKey,
     onSearchPress: () => void,
+    authSession: AuthSession,
+    isProfileEditing: boolean,
+    onStartProfileEditing: () => void,
+    onStopProfileEditing: () => void,
+    onSessionUpdate?: (nextSession: AuthSession) => void,
 ) =>
 {
     if (activeTabKey === "home")
@@ -65,14 +73,26 @@ const renderActiveScreen = (
 
     if (activeTabKey === "profile")
     {
-        return <ProfileScreen />;
+        return (
+            <ProfileScreen
+                authSession={authSession}
+                isEditing={isProfileEditing}
+                onStartEditing={onStartProfileEditing}
+                onStopEditing={onStopProfileEditing}
+                onSessionUpdate={onSessionUpdate}
+            />
+        );
     }
 
     return <HomeScreen onSearchPress={onSearchPress} />;
 };
 
 export const AppShellScreen = (
-    { onLogout }: AppShellScreenProps,
+    {
+        authSession,
+        onSessionUpdate,
+        onLogout,
+    }: AppShellScreenProps,
 ) =>
 {
     const tabs = useMemo(
@@ -87,6 +107,7 @@ export const AppShellScreen = (
         getDefaultTabKey(),
     );
     const [isNewPostOpen, setIsNewPostOpen] = useState(false);
+    const [isProfileEditing, setIsProfileEditing] = useState(false);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [isSideMenuVisible, setIsSideMenuVisible] = useState(false);
     const [recentSearches, setRecentSearches] = useState<string[]>(
@@ -169,6 +190,7 @@ export const AppShellScreen = (
         if (isAppTabKey(menuItem.key))
         {
             setActiveTabKey(menuItem.key);
+            setIsProfileEditing(false);
         }
 
         setIsSearchOpen(false);
@@ -178,6 +200,7 @@ export const AppShellScreen = (
     const handleTabPress = (nextTabKey: AppTabKey): void =>
     {
         setActiveTabKey(nextTabKey);
+        setIsProfileEditing(false);
 
         if (isSideMenuVisible)
         {
@@ -206,6 +229,27 @@ export const AppShellScreen = (
     const handleCloseSearch = (): void =>
     {
         setIsSearchOpen(false);
+    };
+
+    const handleStartProfileEditing = (): void =>
+    {
+        setIsProfileEditing(true);
+    };
+
+    const handleStopProfileEditing = (): void =>
+    {
+        setIsProfileEditing(false);
+    };
+
+    const handleHeaderActionPress = (): void =>
+    {
+        if (activeTabKey === "profile")
+        {
+            handleStartProfileEditing();
+            return;
+        }
+
+        handleOpenNewPost();
     };
 
     const handleSearchSubmit = (searchQuery: string): void =>
@@ -323,12 +367,21 @@ export const AppShellScreen = (
                 >
                     <AppHeader
                         onMenuPress={handleToggleSideMenu}
-                        onNewPostPress={handleOpenNewPost}
+                        onRightActionPress={handleHeaderActionPress}
+                        rightActionIcon={activeTabKey === "profile" ? "settings" : "plus"}
                     />
                 </SafeAreaView>
 
                 <View style={styles.screenContainer}>
-                    {renderActiveScreen(activeTabKey, handleOpenSearch)}
+                    {renderActiveScreen(
+                        activeTabKey,
+                        handleOpenSearch,
+                        authSession,
+                        isProfileEditing,
+                        handleStartProfileEditing,
+                        handleStopProfileEditing,
+                        onSessionUpdate,
+                    )}
                 </View>
 
                 <SafeAreaView

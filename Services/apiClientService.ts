@@ -1,3 +1,5 @@
+import Constants from "expo-constants";
+
 type RequestFailure = {
     baseUrl: string;
     reason: string;
@@ -62,12 +64,92 @@ const parseBaseUrlList = (value: string | undefined): string[] =>
         );
 };
 
+const extractHostFromUriLikeValue = (value: string | null | undefined): string | null =>
+{
+    if (!value)
+    {
+        return null;
+    }
+
+    const normalizedValue = value.includes("://")
+        ? value
+        : `http://${value}`;
+
+    try
+    {
+        const parsedUrl = new URL(normalizedValue);
+        return parsedUrl.hostname || null;
+    }
+    catch
+    {
+        return null;
+    }
+};
+
+const getExpoDerivedBaseUrls = (): string[] =>
+{
+    const constantsLike = Constants as unknown as {
+        expoConfig?: {
+            hostUri?: string;
+        };
+        expoGoConfig?: {
+            debuggerHost?: string;
+        };
+        manifest?: {
+            debuggerHost?: string;
+            hostUri?: string;
+        };
+        manifest2?: {
+            extra?: {
+                expoClient?: {
+                    hostUri?: string;
+                };
+            };
+        };
+    };
+
+    const hostCandidates = [
+        constantsLike.expoConfig?.hostUri,
+        constantsLike.expoGoConfig?.debuggerHost,
+        constantsLike.manifest?.debuggerHost,
+        constantsLike.manifest?.hostUri,
+        constantsLike.manifest2?.extra?.expoClient?.hostUri,
+    ];
+
+    const detectedHost = hostCandidates
+        .map(
+            (candidate) => extractHostFromUriLikeValue(candidate),
+        )
+        .find(
+            (host): host is string => Boolean(host),
+        );
+
+    if (!detectedHost)
+    {
+        return [];
+    }
+
+    const detectedBaseUrls = [
+        `http://${detectedHost}:3000`,
+    ];
+
+    // Android emulator host mapping, kept near detected host for faster fallback.
+    if (detectedHost === "localhost" || detectedHost === "127.0.0.1")
+    {
+        detectedBaseUrls.push("http://10.0.2.2:3000");
+    }
+
+    return detectedBaseUrls;
+};
+
 const getConfiguredBaseUrls = (): string[] =>
 {
     const primaryBaseUrls = parseBaseUrlList(process.env.EXPO_PUBLIC_API_BASE_URL);
     const fallbackBaseUrls = parseBaseUrlList(process.env.EXPO_PUBLIC_API_BASE_URL_FALLBACKS);
+    const expoDerivedBaseUrls = getExpoDerivedBaseUrls();
 
     const configuredBaseUrls = [
+        ...expoDerivedBaseUrls,
         ...primaryBaseUrls,
         ...fallbackBaseUrls,
         ...defaultApiBaseUrls,
@@ -116,6 +198,11 @@ const withAuthHeader = (requestInit: RequestInit): RequestInit =>
 const shouldRetryResponse = (statusCode: number): boolean =>
 {
     return statusCode === 429 || statusCode >= 500;
+};
+
+const isTerminalClientError = (statusCode: number): boolean =>
+{
+    return statusCode >= 400 && statusCode < 500 && statusCode !== 408 && statusCode !== 429;
 };
 
 const getErrorMessage = (caughtError: unknown): string =>
@@ -192,6 +279,33 @@ const fetchWithTimeout = async (
     }
 };
 
+const getErrorMessageFromResponse = async (response: Response): Promise<string> =>
+{
+    try
+    {
+        const parsedPayload = await response.json() as {
+            error?: unknown;
+            message?: unknown;
+        };
+
+        if (typeof parsedPayload.error === "string" && parsedPayload.error.trim().length > 0)
+        {
+            return parsedPayload.error;
+        }
+
+        if (typeof parsedPayload.message === "string" && parsedPayload.message.trim().length > 0)
+        {
+            return parsedPayload.message;
+        }
+    }
+    catch
+    {
+        // Ignore parse failures and fall back to generic status message.
+    }
+
+    return `Request failed with HTTP ${response.status}`;
+};
+
 export const getPreferredApiBaseUrl = (): string | null =>
 {
     return preferredBaseUrl;
@@ -222,6 +336,12 @@ export const requestJsonWithFailover = async <TResponse>(
 
                 if (!response.ok)
                 {
+                    if (isTerminalClientError(response.status))
+                    {
+                        const terminalErrorMessage = await getErrorMessageFromResponse(response);
+                        throw new Error(terminalErrorMessage);
+                    }
+
                     failures.push(
                         {
                             baseUrl,

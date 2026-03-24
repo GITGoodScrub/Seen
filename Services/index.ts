@@ -9,3 +9,6 @@ export * from "./sideMenuTypes";
 export * from "./sideMenuService";
 export * from "./authTypes";
 export * from "./authService";
+export * from "./usernameService";
+export * from "./profileTypes";
+export * from "./profileService";

@@ -53,6 +53,14 @@ export default function App()
         [],
     );
 
+    const handleSessionUpdate = useCallback(
+        (nextSession: AuthSession): void =>
+        {
+            setAuthSession(nextSession);
+        },
+        [],
+    );
+
     const handleLogout = useCallback(
         async (): Promise<void> =>
         {
@@ -141,7 +149,11 @@ export default function App()
             ) : null}
 
             {authViewState === "signed-in" && authSession ? (
-                <AppShellScreen onLogout={handleLogout} />
+                <AppShellScreen
+                    authSession={authSession}
+                    onSessionUpdate={handleSessionUpdate}
+                    onLogout={handleLogout}
+                />
             ) : null}
         </SafeAreaProvider>
     );

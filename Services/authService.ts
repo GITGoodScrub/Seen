@@ -16,6 +16,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Platform } from "react-native";
 import { requestJsonWithFailover, setApiAuthToken } from "./apiClientService";
 import { AuthSession, GoogleTokenSet, VerifyAuthResponse } from "./authTypes";
+import { setCurrentUsername } from "./usernameService";
 
 const authVerifyRoute = "/api/auth/verify";
 
@@ -171,11 +172,34 @@ const finalizeFirebaseUserAuth = async (firebaseUser: User): Promise<AuthSession
 export const signUpWithEmail = async (
     email: string,
     password: string,
+    username: string,
 ): Promise<AuthSession> =>
 {
     const auth = getFirebaseAuth();
     const credential = await createUserWithEmailAndPassword(auth, email, password);
-    return finalizeFirebaseUserAuth(credential.user);
+
+    try
+    {
+        const initialSession = await finalizeFirebaseUserAuth(credential.user);
+        await setCurrentUsername(username);
+
+        const refreshedToken = await credential.user.getIdToken(true);
+        return verifyFirebaseTokenWithBackend(refreshedToken);
+    }
+    catch (caughtError)
+    {
+        try
+        {
+            await credential.user.delete();
+        }
+        catch
+        {
+            // If deletion fails we still surface the original signup error.
+        }
+
+        setApiAuthToken(null);
+        throw caughtError;
+    }
 };
 
 export const signInWithEmail = async (
