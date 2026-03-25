@@ -44,6 +44,15 @@ const safeString = (value: string | null | undefined): string =>
     return value ?? "";
 };
 
+const VerifiedBadge = () =>
+{
+    return (
+        <View style={styles.verifiedBadge}>
+            <Text style={styles.verifiedBadgeText}>✓</Text>
+        </View>
+    );
+};
+
 export const ProfileScreen = (
     {
         authSession,
@@ -60,6 +69,7 @@ export const ProfileScreen = (
     const [displayName, setDisplayName] = useState(safeString(authSession.user.profile?.displayName));
     const [bio, setBio] = useState(safeString(authSession.user.profile?.bio));
     const [profilePhoto, setProfilePhoto] = useState(safeString(authSession.user.profile?.profilePhoto));
+    const [isVerified, setIsVerified] = useState(authSession.user.profile?.isVerified ?? false);
     const [isLoadingProfile, setIsLoadingProfile] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [isFollowActionLoading, setIsFollowActionLoading] = useState(false);
@@ -128,6 +138,7 @@ export const ProfileScreen = (
                     setDisplayName(safeString(profile.displayName));
                     setBio(safeString(profile.bio));
                     setProfilePhoto(safeString(profile.profilePhoto));
+                    setIsVerified(profile.isVerified);
                     setFollowingCount(followSnapshot.followingCount);
                     setFollowersCount(followSnapshot.followersCount);
                     setIsFollowingTarget(followSnapshot.isFollowingTarget);
@@ -616,7 +627,10 @@ export const ProfileScreen = (
                     <>
                         <View style={styles.readOnlyRow}>
                             <Text style={styles.readOnlyLabel}>Username</Text>
-                            <Text style={styles.readOnlyValue}>{username || "-"}</Text>
+                            <View style={styles.usernameValueRow}>
+                                <Text style={styles.readOnlyValue}>{username || "-"}</Text>
+                                {isVerified && username ? <VerifiedBadge /> : null}
+                            </View>
                         </View>
 
                         <View style={styles.readOnlyRow}>
@@ -685,9 +699,12 @@ export const ProfileScreen = (
                                     <View style={[styles.backChevronLine, styles.backChevronLineBottom]} />
                                 </View>
                             </Pressable>
-                            <Text style={styles.followListHeaderTitle}>
-                                {username ? `@${username}` : "@unknown"}
-                            </Text>
+                            <View style={styles.usernameValueRow}>
+                                <Text style={styles.followListHeaderTitle}>
+                                    {username ? `@${username}` : "@unknown"}
+                                </Text>
+                                {isVerified && username ? <VerifiedBadge /> : null}
+                            </View>
                             <View style={styles.followListHeaderSpacer} />
                         </View>
 
@@ -787,9 +804,12 @@ export const ProfileScreen = (
                                                         </Text>
                                                     )}
                                                 </View>
-                                                <Text style={styles.followListUsername}>
-                                                    {item.username ? `@${item.username}` : "@unknown"}
-                                                </Text>
+                                                <View style={styles.usernameValueRow}>
+                                                    <Text style={styles.followListUsername}>
+                                                        {item.username ? `@${item.username}` : "@unknown"}
+                                                    </Text>
+                                                    {item.isVerified && item.username ? <VerifiedBadge /> : null}
+                                                </View>
                                             </Pressable>
                                         );
                                     }
@@ -980,6 +1000,13 @@ const styles = StyleSheet.create(
         color: "#0f172a",
         fontWeight: "700",
     },
+    usernameValueRow:
+    {
+        flexDirection: "row",
+        alignItems: "center",
+        columnGap: 6,
+        flexShrink: 1,
+    },
     followListHeaderSpacer:
     {
         width: 36,
@@ -1077,6 +1104,22 @@ const styles = StyleSheet.create(
         fontSize: 14,
         color: "#0f172a",
         fontWeight: "600",
+    },
+    verifiedBadge:
+    {
+        width: 16,
+        height: 16,
+        borderRadius: 8,
+        backgroundColor: "#1d4ed8",
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    verifiedBadgeText:
+    {
+        color: "#ffffff",
+        fontSize: 10,
+        fontWeight: "700",
+        lineHeight: 10,
     },
     panel:
     {

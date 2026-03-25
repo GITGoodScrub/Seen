@@ -11,6 +11,7 @@ export type SearchResult = {
     type: SearchResultType;
     title: string;
     subtitle: string;
+    isVerified?: boolean;
 };
 
 export type SearchResponse = {

@@ -2,6 +2,7 @@ export type FollowUser = {
     userId: number;
     username: string | null;
     profilePhoto: string | null;
+    isVerified: boolean;
     createdAt: string;
 };
 

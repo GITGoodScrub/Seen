@@ -92,6 +92,24 @@ export const isFirebaseConfigured = (): boolean =>
 
 export const getErrorMessageFromUnknown = (caughtError: unknown): string =>
 {
+    const errorWithCode = caughtError as {
+        code?: unknown;
+        message?: unknown;
+    };
+
+    if (typeof errorWithCode.code === "string")
+    {
+        if (errorWithCode.code === "auth/email-already-in-use")
+        {
+            return "An account with that email already exists. Log in instead, or use password reset if needed.";
+        }
+
+        if (errorWithCode.code === "auth/invalid-credential" || errorWithCode.code === "auth/wrong-password")
+        {
+            return "Incorrect email or password.";
+        }
+    }
+
     if (caughtError instanceof Error)
     {
         return caughtError.message;
@@ -183,7 +201,32 @@ export const signUpWithEmail = async (
 ): Promise<AuthSession> =>
 {
     const auth = getFirebaseAuth();
-    const credential = await createUserWithEmailAndPassword(auth, email, password);
+
+    let credential: Awaited<ReturnType<typeof createUserWithEmailAndPassword>>;
+
+    try
+    {
+        credential = await createUserWithEmailAndPassword(auth, email, password);
+    }
+    catch (caughtError)
+    {
+        const errorWithCode = caughtError as {
+            code?: unknown;
+        };
+
+        // If Firebase already has this email, treat signup as a DB account recovery flow.
+        if (typeof errorWithCode.code === "string" && errorWithCode.code === "auth/email-already-in-use")
+        {
+            const existingCredential = await signInWithEmailAndPassword(auth, email, password);
+            const recoveredSession = await finalizeFirebaseUserAuth(existingCredential.user, "signup");
+            await setCurrentUsername(username);
+
+            const refreshedToken = await existingCredential.user.getIdToken(true);
+            return verifyFirebaseTokenWithBackend(refreshedToken, "signup");
+        }
+
+        throw caughtError;
+    }
 
     try
     {

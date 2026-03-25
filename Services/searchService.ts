@@ -22,6 +22,7 @@ const isSearchResult = (value: unknown): value is SearchResult =>
         type?: unknown;
         title?: unknown;
         subtitle?: unknown;
+        isVerified?: unknown;
     };
 
     return (
@@ -29,6 +30,7 @@ const isSearchResult = (value: unknown): value is SearchResult =>
         && (candidate.type === "user" || candidate.type === "venue" || candidate.type === "post")
         && typeof candidate.title === "string"
         && typeof candidate.subtitle === "string"
+        && (candidate.isVerified === undefined || typeof candidate.isVerified === "boolean")
     );
 };
 

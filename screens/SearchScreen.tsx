@@ -42,6 +42,15 @@ const SearchIcon = () =>
     );
 };
 
+const VerifiedBadge = () =>
+{
+    return (
+        <View style={styles.verifiedBadge}>
+            <Text style={styles.verifiedBadgeText}>✓</Text>
+        </View>
+    );
+};
+
 export const SearchScreen = (
     {
         recentSearches,
@@ -223,7 +232,10 @@ export const SearchScreen = (
                         onPress={() => handlePressSearchResult(result)}
                     >
                         <Text style={styles.listTitle}>{result.title}</Text>
-                        <Text style={styles.listSubtitle}>{result.subtitle}</Text>
+                        <View style={styles.listSubtitleRow}>
+                            <Text style={styles.listSubtitle}>{result.subtitle}</Text>
+                            {result.type === "user" && result.isVerified ? <VerifiedBadge /> : null}
+                        </View>
                     </Pressable>
                 );
             },
@@ -403,6 +415,30 @@ const styles = StyleSheet.create(
         fontSize: 12,
         color: "#64748b",
         marginTop: 2,
+    },
+    listSubtitleRow:
+    {
+        flexDirection: "row",
+        alignItems: "center",
+        marginTop: 2,
+        columnGap: 6,
+    },
+    verifiedBadge:
+    {
+        width: 16,
+        height: 16,
+        borderRadius: 8,
+        backgroundColor: "#1d4ed8",
+        alignItems: "center",
+        justifyContent: "center",
+        marginTop: 2,
+    },
+    verifiedBadgeText:
+    {
+        color: "#ffffff",
+        fontSize: 10,
+        fontWeight: "700",
+        lineHeight: 10,
     },
     emptyText:
     {
