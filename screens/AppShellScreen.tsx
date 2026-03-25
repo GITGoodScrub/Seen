@@ -45,6 +45,7 @@ const renderActiveScreen = (
     activeTabKey: AppTabKey,
     onSearchPress: () => void,
     authSession: AuthSession,
+    selectedProfileUserId: number | null,
     isProfileEditing: boolean,
     onStartProfileEditing: () => void,
     onStopProfileEditing: () => void,
@@ -76,6 +77,7 @@ const renderActiveScreen = (
         return (
             <ProfileScreen
                 authSession={authSession}
+                profileUserId={selectedProfileUserId}
                 isEditing={isProfileEditing}
                 onStartEditing={onStartProfileEditing}
                 onStopEditing={onStopProfileEditing}
@@ -106,6 +108,7 @@ export const AppShellScreen = (
     const [activeTabKey, setActiveTabKey] = useState<AppTabKey>(
         getDefaultTabKey(),
     );
+    const [selectedProfileUserId, setSelectedProfileUserId] = useState<number | null>(null);
     const [isNewPostOpen, setIsNewPostOpen] = useState(false);
     const [isProfileEditing, setIsProfileEditing] = useState(false);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -191,6 +194,11 @@ export const AppShellScreen = (
         {
             setActiveTabKey(menuItem.key);
             setIsProfileEditing(false);
+
+            if (menuItem.key === "profile")
+            {
+                setSelectedProfileUserId(null);
+            }
         }
 
         setIsSearchOpen(false);
@@ -201,6 +209,11 @@ export const AppShellScreen = (
     {
         setActiveTabKey(nextTabKey);
         setIsProfileEditing(false);
+
+        if (nextTabKey === "profile")
+        {
+            setSelectedProfileUserId(null);
+        }
 
         if (isSideMenuVisible)
         {
@@ -245,6 +258,11 @@ export const AppShellScreen = (
     {
         if (activeTabKey === "profile")
         {
+            if (selectedProfileUserId !== null && selectedProfileUserId !== authSession.user.id)
+            {
+                return;
+            }
+
             handleStartProfileEditing();
             return;
         }
@@ -263,6 +281,16 @@ export const AppShellScreen = (
     {
         setRecentSearches([]);
     };
+
+    const handleOpenProfileFromSearch = (profileUserId: number): void =>
+    {
+        setSelectedProfileUserId(profileUserId);
+        setIsProfileEditing(false);
+        setActiveTabKey("profile");
+        setIsSearchOpen(false);
+    };
+
+    const isViewingOtherProfile = selectedProfileUserId !== null && selectedProfileUserId !== authSession.user.id;
 
     const sideMenuTranslateX = sideMenuProgress.interpolate(
         {
@@ -313,6 +341,7 @@ export const AppShellScreen = (
                         recentSearches={recentSearches}
                         onClose={handleCloseSearch}
                         onSearchSubmit={handleSearchSubmit}
+                        onOpenProfilePress={handleOpenProfileFromSearch}
                         onClearRecentSearches={handleClearRecentSearches}
                     />
                 </SafeAreaView>
@@ -368,7 +397,9 @@ export const AppShellScreen = (
                     <AppHeader
                         onMenuPress={handleToggleSideMenu}
                         onRightActionPress={handleHeaderActionPress}
-                        rightActionIcon={activeTabKey === "profile" ? "settings" : "plus"}
+                        rightActionIcon={activeTabKey === "profile"
+                            ? (isViewingOtherProfile ? "none" : "settings")
+                            : "plus"}
                     />
                 </SafeAreaView>
 
@@ -377,6 +408,7 @@ export const AppShellScreen = (
                         activeTabKey,
                         handleOpenSearch,
                         authSession,
+                        selectedProfileUserId,
                         isProfileEditing,
                         handleStartProfileEditing,
                         handleStopProfileEditing,

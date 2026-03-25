@@ -20,6 +20,7 @@ import {
 
 type ProfileScreenProps = {
     authSession: AuthSession;
+    profileUserId?: number | null;
     isEditing?: boolean;
     onStartEditing?: () => void;
     onStopEditing?: () => void;
@@ -34,6 +35,7 @@ const safeString = (value: string | null | undefined): string =>
 export const ProfileScreen = (
     {
         authSession,
+        profileUserId,
         isEditing = false,
         onStartEditing,
         onStopEditing,
@@ -49,6 +51,9 @@ export const ProfileScreen = (
     const [isSaving, setIsSaving] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
+    const selectedUserId = profileUserId ?? authSession.user.id;
+    const isOwnProfile = selectedUserId === authSession.user.id;
+    const isInEditMode = isOwnProfile && isEditing;
 
     useEffect(
         () =>
@@ -58,10 +63,11 @@ export const ProfileScreen = (
             const loadProfile = async (): Promise<void> =>
             {
                 setIsLoadingProfile(true);
+                setSuccessMessage(null);
 
                 try
                 {
-                    const profile = await loadProfileByUserId(authSession.user.id);
+                    const profile = await loadProfileByUserId(selectedUserId);
 
                     if (isCancelled)
                     {
@@ -99,7 +105,7 @@ export const ProfileScreen = (
                 isCancelled = true;
             };
         },
-        [authSession.user.id],
+        [selectedUserId],
     );
 
     const initials = useMemo(
@@ -140,6 +146,11 @@ export const ProfileScreen = (
 
     const handleSaveProfile = async (): Promise<void> =>
     {
+        if (!isOwnProfile)
+        {
+            return;
+        }
+
         setIsSaving(true);
         setSuccessMessage(null);
         setErrorMessage(null);
@@ -203,13 +214,15 @@ export const ProfileScreen = (
                 <Text style={styles.avatarText}>{initials}</Text>
             </View>
 
-            <Text style={styles.title}>{isEditing ? "Edit Profile" : "Profile"}</Text>
+            <Text style={styles.title}>{isInEditMode ? "Edit Profile" : "Profile"}</Text>
             <Text style={styles.meta}>
-                {isEditing ? "Update your public account details." : "Your public account details."}
+                {isInEditMode
+                    ? "Update your public account details."
+                    : (isOwnProfile ? "Your public account details." : "Public profile." )}
             </Text>
 
             <View style={styles.panel}>
-                {isEditing ? (
+                {isInEditMode ? (
                     <>
                         <Text style={styles.label}>Username</Text>
                         <TextInput
@@ -312,12 +325,14 @@ export const ProfileScreen = (
                             <Text style={styles.readOnlyValue}>{profilePhoto || "-"}</Text>
                         </View>
 
-                        <Pressable
-                            style={styles.secondaryButton}
-                            onPress={onStartEditing}
-                        >
-                            <Text style={styles.secondaryButtonText}>Edit Profile</Text>
-                        </Pressable>
+                        {isOwnProfile ? (
+                            <Pressable
+                                style={styles.secondaryButton}
+                                onPress={onStartEditing}
+                            >
+                                <Text style={styles.secondaryButtonText}>Edit Profile</Text>
+                            </Pressable>
+                        ) : null}
                     </>
                 )}
             </View>

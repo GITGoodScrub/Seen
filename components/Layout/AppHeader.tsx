@@ -4,7 +4,7 @@ import { higLayout } from "../../constants";
 type AppHeaderProps = {
     onMenuPress?: () => void;
     onRightActionPress?: () => void;
-    rightActionIcon?: "plus" | "settings";
+    rightActionIcon?: "plus" | "settings" | "none";
 };
 
 export const AppHeader = (
@@ -31,8 +31,9 @@ export const AppHeader = (
             <Pressable
                 style={styles.iconButton}
                 onPress={onRightActionPress}
+                disabled={rightActionIcon === "none"}
             >
-                {rightActionIcon === "settings" ? (
+                {rightActionIcon === "none" ? null : rightActionIcon === "settings" ? (
                     <View style={styles.settingsIconOuter}>
                         <View style={[styles.settingsTooth, styles.settingsToothTop]} />
                         <View style={[styles.settingsTooth, styles.settingsToothBottom]} />
