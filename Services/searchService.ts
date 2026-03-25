@@ -1,54 +1,35 @@
-import { SearchSuggestion } from "./searchTypes";
+import { requestJsonWithFailover } from "./apiClientService";
+import { SearchResponse, SearchResult } from "./searchTypes";
 
 const maxRecentSearchCount = 6;
-
-// Placeholder source list until backend-powered recommendations are implemented.
-const placeholderSuggestions: SearchSuggestion[] = [
-    {
-        id: "event-jazz-night",
-        title: "Jazz Night at Hljomaholl",
-        subtitle: "Event · Friday 20:00",
-    },
-    {
-        id: "venue-harpa",
-        title: "Harpa",
-        subtitle: "Venue · Reykjavik",
-    },
-    {
-        id: "artist-aurora-north",
-        title: "Aurora North",
-        subtitle: "Artist · Electronic",
-    },
-    {
-        id: "event-indie-saturday",
-        title: "Indie Saturday",
-        subtitle: "Event · Saturday 22:00",
-    },
-    {
-        id: "venue-gaukurinn",
-        title: "Gaukurinn",
-        subtitle: "Venue · Live music",
-    },
-    {
-        id: "artist-solar-tide",
-        title: "Solar Tide",
-        subtitle: "Artist · Alternative",
-    },
-    {
-        id: "event-open-mic",
-        title: "Open Mic Session",
-        subtitle: "Event · Community",
-    },
-    {
-        id: "event-house-social",
-        title: "House Social",
-        subtitle: "Event · Club night",
-    },
-];
+const minSearchQueryLength = 2;
+const searchRoute = "/api/search";
 
 const normalizeSearchQuery = (searchQuery: string): string =>
 {
     return searchQuery.trim().toLowerCase();
+};
+
+const isSearchResult = (value: unknown): value is SearchResult =>
+{
+    if (!value || typeof value !== "object")
+    {
+        return false;
+    }
+
+    const candidate = value as {
+        id?: unknown;
+        type?: unknown;
+        title?: unknown;
+        subtitle?: unknown;
+    };
+
+    return (
+        typeof candidate.id === "string"
+        && (candidate.type === "user" || candidate.type === "venue" || candidate.type === "post")
+        && typeof candidate.title === "string"
+        && typeof candidate.subtitle === "string"
+    );
 };
 
 export const getDefaultRecentSearches = (): string[] =>
@@ -83,22 +64,31 @@ export const buildUpdatedRecentSearches = (
     ].slice(0, maxRecentSearchCount);
 };
 
-export const getSearchRecommendations = (searchQuery: string): SearchSuggestion[] =>
+export const loadSearchResults = async (searchQuery: string): Promise<SearchResult[]> =>
 {
     const normalizedSearchQuery = normalizeSearchQuery(searchQuery);
 
-    if (!normalizedSearchQuery)
+    if (normalizedSearchQuery.length < minSearchQueryLength)
     {
         return [];
     }
 
-    return placeholderSuggestions
-        .filter(
-            (suggestion) =>
-            {
-                const searchableText = `${suggestion.title} ${suggestion.subtitle}`.toLowerCase();
-                return searchableText.includes(normalizedSearchQuery);
-            },
-        )
-        .slice(0, 8);
+    const encodedQuery = encodeURIComponent(searchQuery.trim());
+    const payload = await requestJsonWithFailover<unknown>(`${searchRoute}?q=${encodedQuery}`);
+
+    if (!payload || typeof payload !== "object")
+    {
+        return [];
+    }
+
+    const response = payload as SearchResponse;
+
+    if (!Array.isArray(response.results))
+    {
+        return [];
+    }
+
+    return response.results.filter(
+        (entry) => isSearchResult(entry),
+    );
 };

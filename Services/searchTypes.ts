@@ -3,3 +3,17 @@ export type SearchSuggestion = {
     title: string;
     subtitle: string;
 };
+
+export type SearchResultType = "user" | "venue" | "post";
+
+export type SearchResult = {
+    id: string;
+    type: SearchResultType;
+    title: string;
+    subtitle: string;
+};
+
+export type SearchResponse = {
+    query: string;
+    results: SearchResult[];
+};

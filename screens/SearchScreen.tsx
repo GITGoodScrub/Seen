@@ -1,12 +1,35 @@
-import { useMemo, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
-import { getSearchRecommendations, SearchSuggestion } from "../Services";
+import { useEffect, useState } from "react";
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import {
+    getErrorMessageFromUnknown,
+    loadSearchResults,
+    SearchResult,
+} from "../Services";
 
 type SearchScreenProps = {
     recentSearches: string[];
     onClose: () => void;
     onSearchSubmit: (searchQuery: string) => void;
+    onOpenProfilePress: (profileUserId: number) => void;
     onClearRecentSearches: () => void;
+};
+
+const getUserIdFromSearchResultId = (searchResultId: string): number | null =>
+{
+    if (!searchResultId.startsWith("user-"))
+    {
+        return null;
+    }
+
+    const idPortion = searchResultId.slice("user-".length);
+    const parsedId = Number(idPortion);
+
+    if (!Number.isFinite(parsedId))
+    {
+        return null;
+    }
+
+    return parsedId;
 };
 
 const SearchIcon = () =>
@@ -24,16 +47,80 @@ export const SearchScreen = (
         recentSearches,
         onClose,
         onSearchSubmit,
+        onOpenProfilePress,
         onClearRecentSearches,
     }: SearchScreenProps,
 ) =>
 {
     const [searchQuery, setSearchQuery] = useState("");
+    const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+    const [isSearching, setIsSearching] = useState(false);
+    const [searchErrorMessage, setSearchErrorMessage] = useState<string | null>(null);
     const trimmedSearchQuery = searchQuery.trim();
 
-    const recommendations = useMemo(
-        () => getSearchRecommendations(searchQuery),
-        [searchQuery],
+    useEffect(
+        () =>
+        {
+            let isCancelled = false;
+
+            const runSearch = async (): Promise<void> =>
+            {
+                if (trimmedSearchQuery.length < 2)
+                {
+                    setSearchResults([]);
+                    setSearchErrorMessage(null);
+                    setIsSearching(false);
+                    return;
+                }
+
+                setIsSearching(true);
+                setSearchErrorMessage(null);
+
+                try
+                {
+                    const results = await loadSearchResults(trimmedSearchQuery);
+
+                    if (isCancelled)
+                    {
+                        return;
+                    }
+
+                    setSearchResults(results);
+                }
+                catch (caughtError)
+                {
+                    if (isCancelled)
+                    {
+                        return;
+                    }
+
+                    setSearchResults([]);
+                    setSearchErrorMessage(getErrorMessageFromUnknown(caughtError));
+                }
+                finally
+                {
+                    if (!isCancelled)
+                    {
+                        setIsSearching(false);
+                    }
+                }
+            };
+
+            const timeoutHandle = setTimeout(
+                () =>
+                {
+                    void runSearch();
+                },
+                250,
+            );
+
+            return () =>
+            {
+                isCancelled = true;
+                clearTimeout(timeoutHandle);
+            };
+        },
+        [trimmedSearchQuery],
     );
 
     const handleSubmitSearch = (nextSearchQuery: string): void =>
@@ -47,6 +134,25 @@ export const SearchScreen = (
 
         setSearchQuery(normalizedQuery);
         onSearchSubmit(normalizedQuery);
+    };
+
+    const handlePressSearchResult = (result: SearchResult): void =>
+    {
+        handleSubmitSearch(result.title);
+
+        if (result.type !== "user")
+        {
+            return;
+        }
+
+        const profileUserId = getUserIdFromSearchResultId(result.id);
+
+        if (profileUserId === null)
+        {
+            return;
+        }
+
+        onOpenProfilePress(profileUserId);
     };
 
     const renderRecentSearches = () =>
@@ -74,26 +180,50 @@ export const SearchScreen = (
         );
     };
 
-    const renderRecommendations = () =>
+    const renderSearchResults = () =>
     {
-        if (recommendations.length === 0)
+        if (trimmedSearchQuery.length < 2)
         {
             return (
-                <Text style={styles.emptyText}>No recommendations yet for this query.</Text>
+                <Text style={styles.emptyText}>Type at least 2 characters to search.</Text>
             );
         }
 
-        return recommendations.map(
-            (suggestion: SearchSuggestion) =>
+        if (isSearching)
+        {
+            return (
+                <View style={styles.loadingRow}>
+                    <ActivityIndicator size="small" />
+                    <Text style={styles.loadingLabel}>Searching...</Text>
+                </View>
+            );
+        }
+
+        if (searchErrorMessage)
+        {
+            return (
+                <Text style={styles.errorText}>{searchErrorMessage}</Text>
+            );
+        }
+
+        if (searchResults.length === 0)
+        {
+            return (
+                <Text style={styles.emptyText}>No results found for this query.</Text>
+            );
+        }
+
+        return searchResults.map(
+            (result: SearchResult) =>
             {
                 return (
                     <Pressable
-                        key={suggestion.id}
+                        key={result.id}
                         style={styles.listRow}
-                        onPress={() => handleSubmitSearch(suggestion.title)}
+                        onPress={() => handlePressSearchResult(result)}
                     >
-                        <Text style={styles.listTitle}>{suggestion.title}</Text>
-                        <Text style={styles.listSubtitle}>{suggestion.subtitle}</Text>
+                        <Text style={styles.listTitle}>{result.title}</Text>
+                        <Text style={styles.listSubtitle}>{result.subtitle}</Text>
                     </Pressable>
                 );
             },
@@ -133,8 +263,8 @@ export const SearchScreen = (
             >
                 {trimmedSearchQuery ? (
                     <View>
-                        <Text style={styles.sectionTitle}>Recommendations</Text>
-                        {renderRecommendations()}
+                        <Text style={styles.sectionTitle}>Results</Text>
+                        {renderSearchResults()}
                     </View>
                 ) : (
                     <View>
@@ -278,5 +408,21 @@ const styles = StyleSheet.create(
     {
         fontSize: 13,
         color: "#64748b",
+    },
+    loadingRow:
+    {
+        flexDirection: "row",
+        alignItems: "center",
+        columnGap: 8,
+    },
+    loadingLabel:
+    {
+        fontSize: 13,
+        color: "#64748b",
+    },
+    errorText:
+    {
+        fontSize: 13,
+        color: "#b91c1c",
     },
 });
