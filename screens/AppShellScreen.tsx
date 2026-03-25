@@ -47,6 +47,7 @@ const renderActiveScreen = (
     authSession: AuthSession,
     selectedProfileUserId: number | null,
     isProfileEditing: boolean,
+    onOpenProfilePress: (profileUserId: number) => void,
     onStartProfileEditing: () => void,
     onStopProfileEditing: () => void,
     onSessionUpdate?: (nextSession: AuthSession) => void,
@@ -79,6 +80,7 @@ const renderActiveScreen = (
                 authSession={authSession}
                 profileUserId={selectedProfileUserId}
                 isEditing={isProfileEditing}
+                onOpenProfilePress={onOpenProfilePress}
                 onStartEditing={onStartProfileEditing}
                 onStopEditing={onStopProfileEditing}
                 onSessionUpdate={onSessionUpdate}
@@ -282,7 +284,7 @@ export const AppShellScreen = (
         setRecentSearches([]);
     };
 
-    const handleOpenProfileFromSearch = (profileUserId: number): void =>
+    const handleOpenProfile = (profileUserId: number): void =>
     {
         setSelectedProfileUserId(profileUserId);
         setIsProfileEditing(false);
@@ -341,7 +343,7 @@ export const AppShellScreen = (
                         recentSearches={recentSearches}
                         onClose={handleCloseSearch}
                         onSearchSubmit={handleSearchSubmit}
-                        onOpenProfilePress={handleOpenProfileFromSearch}
+                        onOpenProfilePress={handleOpenProfile}
                         onClearRecentSearches={handleClearRecentSearches}
                     />
                 </SafeAreaView>
@@ -410,6 +412,7 @@ export const AppShellScreen = (
                         authSession,
                         selectedProfileUserId,
                         isProfileEditing,
+                        handleOpenProfile,
                         handleStartProfileEditing,
                         handleStopProfileEditing,
                         onSessionUpdate,

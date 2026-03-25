@@ -12,3 +12,5 @@ export * from "./authService";
 export * from "./usernameService";
 export * from "./profileTypes";
 export * from "./profileService";
+export * from "./followTypes";
+export * from "./followService";

@@ -1,6 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
     ActivityIndicator,
+    Animated,
+    Easing,
+    FlatList,
     Pressable,
     ScrollView,
     StyleSheet,
@@ -10,18 +13,24 @@ import {
 } from "react-native";
 import {
     AuthSession,
+    FollowListType,
+    FollowUser,
+    loadFollowUsers,
+    loadFollowSnapshot,
     ProfileRecord,
     getErrorMessageFromUnknown,
     getUsernameValidationMessage,
     loadProfileByUserId,
     saveMyProfile,
     setCurrentUsername,
+    toggleFollowUser,
 } from "../Services";
 
 type ProfileScreenProps = {
     authSession: AuthSession;
     profileUserId?: number | null;
     isEditing?: boolean;
+    onOpenProfilePress?: (profileUserId: number) => void;
     onStartEditing?: () => void;
     onStopEditing?: () => void;
     onSessionUpdate?: (nextSession: AuthSession) => void;
@@ -37,6 +46,7 @@ export const ProfileScreen = (
         authSession,
         profileUserId,
         isEditing = false,
+        onOpenProfilePress,
         onStartEditing,
         onStopEditing,
         onSessionUpdate,
@@ -49,11 +59,47 @@ export const ProfileScreen = (
     const [profilePhoto, setProfilePhoto] = useState(safeString(authSession.user.profile?.profilePhoto));
     const [isLoadingProfile, setIsLoadingProfile] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [isFollowActionLoading, setIsFollowActionLoading] = useState(false);
+    const [isFollowingTarget, setIsFollowingTarget] = useState(false);
+    const [followersCount, setFollowersCount] = useState(0);
+    const [followingCount, setFollowingCount] = useState(0);
+    const [activeFollowListType, setActiveFollowListType] = useState<FollowListType>("followers");
+    const [isFollowListVisible, setIsFollowListVisible] = useState(false);
+    const [isFollowListLoading, setIsFollowListLoading] = useState(false);
+    const [followListErrorMessage, setFollowListErrorMessage] = useState<string | null>(null);
+    const [followListUsers, setFollowListUsers] = useState<FollowUser[]>([]);
+    const [followListTabRowWidth, setFollowListTabRowWidth] = useState(0);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
+    const [followErrorMessage, setFollowErrorMessage] = useState<string | null>(null);
     const selectedUserId = profileUserId ?? authSession.user.id;
     const isOwnProfile = selectedUserId === authSession.user.id;
     const isInEditMode = isOwnProfile && isEditing;
+    const followListPanelProgress = useRef(new Animated.Value(0)).current;
+    const followTabIndicatorProgress = useRef(
+        new Animated.Value(activeFollowListType === "followers" ? 0 : 1),
+    ).current;
+
+    const followListPanelTranslateX = followListPanelProgress.interpolate(
+        {
+            inputRange: [0, 1],
+            outputRange: [460, 0],
+        },
+    );
+
+    const followListBackdropOpacity = followListPanelProgress.interpolate(
+        {
+            inputRange: [0, 1],
+            outputRange: [0, 0.35],
+        },
+    );
+
+    const followTabIndicatorTranslateX = followTabIndicatorProgress.interpolate(
+        {
+            inputRange: [0, 1],
+            outputRange: [0, followListTabRowWidth / 2],
+        },
+    );
 
     useEffect(
         () =>
@@ -68,6 +114,7 @@ export const ProfileScreen = (
                 try
                 {
                     const profile = await loadProfileByUserId(selectedUserId);
+                    const followSnapshot = await loadFollowSnapshot(selectedUserId, authSession.user.id);
 
                     if (isCancelled)
                     {
@@ -78,6 +125,10 @@ export const ProfileScreen = (
                     setDisplayName(safeString(profile.displayName));
                     setBio(safeString(profile.bio));
                     setProfilePhoto(safeString(profile.profilePhoto));
+                    setFollowingCount(followSnapshot.followingCount);
+                    setFollowersCount(followSnapshot.followersCount);
+                    setIsFollowingTarget(followSnapshot.isFollowingTarget);
+                    setFollowErrorMessage(null);
                     setErrorMessage(null);
                 }
                 catch (caughtError)
@@ -107,6 +158,134 @@ export const ProfileScreen = (
         },
         [selectedUserId],
     );
+
+    useEffect(
+        () =>
+        {
+            Animated.timing(
+                followTabIndicatorProgress,
+                {
+                    toValue: activeFollowListType === "followers" ? 0 : 1,
+                    duration: 170,
+                    easing: Easing.out(Easing.cubic),
+                    useNativeDriver: true,
+                },
+            ).start();
+        },
+        [activeFollowListType, followTabIndicatorProgress],
+    );
+
+    const handleToggleFollow = async (): Promise<void> =>
+    {
+        if (isOwnProfile)
+        {
+            return;
+        }
+
+        setIsFollowActionLoading(true);
+        setFollowErrorMessage(null);
+
+        try
+        {
+            const isNowFollowing = await toggleFollowUser(selectedUserId);
+
+            setIsFollowingTarget(isNowFollowing);
+            setFollowersCount(
+                (currentCount) =>
+                {
+                    if (isNowFollowing)
+                    {
+                        return currentCount + 1;
+                    }
+
+                    return Math.max(0, currentCount - 1);
+                },
+            );
+        }
+        catch (caughtError)
+        {
+            setFollowErrorMessage(getErrorMessageFromUnknown(caughtError));
+        }
+        finally
+        {
+            setIsFollowActionLoading(false);
+        }
+    };
+
+    const loadFollowList = async (listType: FollowListType): Promise<void> =>
+    {
+        setActiveFollowListType(listType);
+        setIsFollowListLoading(true);
+        setFollowListErrorMessage(null);
+
+        try
+        {
+            const users = await loadFollowUsers(selectedUserId, listType);
+            setFollowListUsers(users);
+        }
+        catch (caughtError)
+        {
+            setFollowListUsers([]);
+            setFollowListErrorMessage(getErrorMessageFromUnknown(caughtError));
+        }
+        finally
+        {
+            setIsFollowListLoading(false);
+        }
+    };
+
+    const handleOpenFollowList = (listType: FollowListType): void =>
+    {
+        if (!isFollowListVisible)
+        {
+            setIsFollowListVisible(true);
+            Animated.timing(
+                followListPanelProgress,
+                {
+                    toValue: 1,
+                    duration: 220,
+                    easing: Easing.out(Easing.cubic),
+                    useNativeDriver: true,
+                },
+            ).start();
+        }
+
+        void loadFollowList(listType);
+    };
+
+    const handleCloseFollowList = (): void =>
+    {
+        Animated.timing(
+            followListPanelProgress,
+            {
+                toValue: 0,
+                duration: 220,
+                easing: Easing.out(Easing.cubic),
+                useNativeDriver: true,
+            },
+        ).start(
+            () =>
+            {
+                setIsFollowListVisible(false);
+            },
+        );
+    };
+
+    const handleSwitchFollowList = (listType: FollowListType): void =>
+    {
+        if (listType === activeFollowListType)
+        {
+            return;
+        }
+
+        void loadFollowList(listType);
+    };
+
+    const handleOpenProfileFromFollowList = (userId: number): void =>
+    {
+        handleCloseFollowList();
+        onOpenProfilePress?.(userId);
+    };
 
     const initials = useMemo(
         () =>
@@ -205,11 +384,12 @@ export const ProfileScreen = (
     }
 
     return (
-        <ScrollView
-            style={styles.container}
-            contentContainerStyle={styles.content}
-            keyboardShouldPersistTaps="handled"
-        >
+        <View style={styles.container}>
+            <ScrollView
+                style={styles.container}
+                contentContainerStyle={styles.content}
+                keyboardShouldPersistTaps="handled"
+            >
             <View style={styles.avatarPlaceholder}>
                 <Text style={styles.avatarText}>{initials}</Text>
             </View>
@@ -220,6 +400,59 @@ export const ProfileScreen = (
                     ? "Update your public account details."
                     : (isOwnProfile ? "Your public account details." : "Public profile." )}
             </Text>
+
+            <View style={styles.statsRow}>
+                <Pressable
+                    style={styles.statCard}
+                    onPress={() =>
+                    {
+                        handleOpenFollowList("followers");
+                    }}
+                >
+                    <Text style={styles.statCount}>{followersCount}</Text>
+                    <Text style={styles.statLabel}>Followers</Text>
+                </Pressable>
+
+                <Pressable
+                    style={styles.statCard}
+                    onPress={() =>
+                    {
+                        handleOpenFollowList("following");
+                    }}
+                >
+                    <Text style={styles.statCount}>{followingCount}</Text>
+                    <Text style={styles.statLabel}>Following</Text>
+                </Pressable>
+            </View>
+
+            {!isOwnProfile ? (
+                <>
+                    <Pressable
+                        style={[
+                            styles.followButton,
+                            isFollowingTarget ? styles.followingButton : null,
+                            isFollowActionLoading ? styles.saveButtonDisabled : null,
+                        ]}
+                        onPress={() =>
+                        {
+                            void handleToggleFollow();
+                        }}
+                        disabled={isFollowActionLoading}
+                    >
+                        {isFollowActionLoading ? (
+                            <ActivityIndicator color="#ffffff" />
+                        ) : (
+                            <Text style={styles.followButtonText}>
+                                {isFollowingTarget ? "Unfollow" : "Follow"}
+                            </Text>
+                        )}
+                    </Pressable>
+
+                    {followErrorMessage ? (
+                        <Text style={styles.errorText}>{followErrorMessage}</Text>
+                    ) : null}
+                </>
+            ) : null}
 
             <View style={styles.panel}>
                 {isInEditMode ? (
@@ -336,7 +569,146 @@ export const ProfileScreen = (
                     </>
                 )}
             </View>
-        </ScrollView>
+            </ScrollView>
+
+            {isFollowListVisible ? (
+                <>
+                    <Pressable
+                        style={styles.followListDismissLayer}
+                        onPress={handleCloseFollowList}
+                    >
+                        <Animated.View
+                            style={[
+                                styles.followListDismissTint,
+                                {
+                                    opacity: followListBackdropOpacity,
+                                },
+                            ]}
+                        />
+                    </Pressable>
+
+                    <Animated.View
+                        style={[
+                            styles.followListPanel,
+                            {
+                                transform: [
+                                    {
+                                        translateX: followListPanelTranslateX,
+                                    },
+                                ],
+                            },
+                        ]}
+                    >
+                        <View style={styles.followListHeaderRow}>
+                            <Pressable
+                                style={styles.followListBackButton}
+                                onPress={handleCloseFollowList}
+                            >
+                                <View style={styles.backChevronWrap}>
+                                    <View style={[styles.backChevronLine, styles.backChevronLineTop]} />
+                                    <View style={[styles.backChevronLine, styles.backChevronLineBottom]} />
+                                </View>
+                            </Pressable>
+                            <Text style={styles.followListHeaderTitle}>
+                                {username ? `@${username}` : "@unknown"}
+                            </Text>
+                            <View style={styles.followListHeaderSpacer} />
+                        </View>
+
+                        <View
+                            style={styles.followListTabRow}
+                            onLayout={(event) => setFollowListTabRowWidth(event.nativeEvent.layout.width)}
+                        >
+                            <Pressable
+                                style={[
+                                    styles.followListTabButton,
+                                    activeFollowListType === "followers" ? styles.followListTabButtonActive : null,
+                                ]}
+                                onPress={() => handleSwitchFollowList("followers")}
+                            >
+                                <Text
+                                    style={[
+                                        styles.followListTabText,
+                                        activeFollowListType === "followers" ? styles.followListTabTextActive : null,
+                                    ]}
+                                >
+                                    {followersCount} Followers
+                                </Text>
+                            </Pressable>
+
+                            <Pressable
+                                style={[
+                                    styles.followListTabButton,
+                                    activeFollowListType === "following" ? styles.followListTabButtonActive : null,
+                                ]}
+                                onPress={() => handleSwitchFollowList("following")}
+                            >
+                                <Text
+                                    style={[
+                                        styles.followListTabText,
+                                        activeFollowListType === "following" ? styles.followListTabTextActive : null,
+                                    ]}
+                                >
+                                    {followingCount} Following
+                                </Text>
+                            </Pressable>
+
+                            {followListTabRowWidth > 0 ? (
+                                <Animated.View
+                                    style={[
+                                        styles.followListTabIndicator,
+                                        {
+                                            width: followListTabRowWidth / 2,
+                                            transform: [
+                                                {
+                                                    translateX: followTabIndicatorTranslateX,
+                                                },
+                                            ],
+                                        },
+                                    ]}
+                                />
+                            ) : null}
+                        </View>
+
+                        {isFollowListLoading ? (
+                            <View style={styles.modalLoadingWrap}>
+                                <ActivityIndicator size="small" />
+                            </View>
+                        ) : null}
+
+                        {!isFollowListLoading && followListErrorMessage ? (
+                            <Text style={styles.errorText}>{followListErrorMessage}</Text>
+                        ) : null}
+
+                        {!isFollowListLoading && !followListErrorMessage ? (
+                            <FlatList
+                                data={followListUsers}
+                                keyExtractor={(entry) => `${activeFollowListType}-${entry.userId}`}
+                                contentContainerStyle={styles.followListContent}
+                                ListEmptyComponent={
+                                    <Text style={styles.emptyListLabel}>No accounts yet.</Text>
+                                }
+                                renderItem={
+                                    ({ item }) =>
+                                    {
+                                        return (
+                                            <Pressable
+                                                style={styles.followListRow}
+                                                onPress={() => handleOpenProfileFromFollowList(item.userId)}
+                                            >
+                                                <Text style={styles.followListUsername}>
+                                                    {item.username ? `@${item.username}` : "@unknown"}
+                                                </Text>
+                                            </Pressable>
+                                        );
+                                    }
+                                }
+                            />
+                        ) : null}
+                    </Animated.View>
+                </>
+            ) : null}
+        </View>
     );
 };
 
@@ -391,7 +763,198 @@ const styles = StyleSheet.create(
         fontSize: 14,
         color: "#475569",
         textAlign: "center",
-        marginBottom: 16,
+        marginBottom: 12,
+    },
+    statsRow:
+    {
+        width: "100%",
+        flexDirection: "row",
+        columnGap: 10,
+        marginBottom: 10,
+    },
+    statCard:
+    {
+        flex: 1,
+        borderWidth: 1,
+        borderColor: "#d9dee5",
+        borderRadius: 10,
+        backgroundColor: "#ffffff",
+        alignItems: "center",
+        paddingVertical: 10,
+    },
+    statCount:
+    {
+        fontSize: 18,
+        fontWeight: "700",
+        color: "#0f172a",
+    },
+    statLabel:
+    {
+        marginTop: 2,
+        fontSize: 12,
+        color: "#64748b",
+        fontWeight: "600",
+    },
+    followButton:
+    {
+        width: "100%",
+        minHeight: 44,
+        borderRadius: 10,
+        backgroundColor: "#1d4ed8",
+        justifyContent: "center",
+        alignItems: "center",
+        marginBottom: 10,
+    },
+    followingButton:
+    {
+        backgroundColor: "#475569",
+    },
+    followButtonText:
+    {
+        color: "#ffffff",
+        fontSize: 14,
+        fontWeight: "700",
+    },
+    followListDismissLayer:
+    {
+        ...StyleSheet.absoluteFillObject,
+    },
+    followListDismissTint:
+    {
+        flex: 1,
+        backgroundColor: "#0f172a",
+    },
+    followListPanel:
+    {
+        position: "absolute",
+        right: 0,
+        top: 0,
+        bottom: 0,
+        width: "100%",
+        backgroundColor: "#ffffff",
+        paddingTop: 18,
+    },
+    followListHeaderRow:
+    {
+        paddingHorizontal: 16,
+        minHeight: 40,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        marginBottom: 12,
+    },
+    followListBackButton:
+    {
+        width: 36,
+        minHeight: 36,
+        justifyContent: "center",
+        alignItems: "flex-start",
+    },
+    backChevronWrap:
+    {
+        width: 14,
+        height: 14,
+        justifyContent: "center",
+        alignItems: "center",
+        position: "relative",
+    },
+    backChevronLine:
+    {
+        position: "absolute",
+        width: 10,
+        height: 2,
+        borderRadius: 2,
+        backgroundColor: "#0f172a",
+        left: 1,
+    },
+    backChevronLineTop:
+    {
+        transform: [{ rotate: "-45deg" }],
+        top: 3,
+    },
+    backChevronLineBottom:
+    {
+        transform: [{ rotate: "45deg" }],
+        bottom: 3,
+    },
+    followListHeaderTitle:
+    {
+        fontSize: 19,
+        color: "#0f172a",
+        fontWeight: "700",
+    },
+    followListHeaderSpacer:
+    {
+        width: 36,
+    },
+    followListTabRow:
+    {
+        position: "relative",
+        flexDirection: "row",
+        borderBottomWidth: 1,
+        borderBottomColor: "#e2e8f0",
+        marginBottom: 8,
+    },
+    followListTabButton:
+    {
+        flex: 1,
+        minHeight: 44,
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    followListTabButtonActive:
+    {
+        borderBottomWidth: 2,
+        borderBottomColor: "#0f172a",
+    },
+    followListTabText:
+    {
+        fontSize: 14,
+        color: "#64748b",
+        fontWeight: "600",
+    },
+    followListTabTextActive:
+    {
+        color: "#0f172a",
+    },
+    followListTabIndicator:
+    {
+        position: "absolute",
+        bottom: -1,
+        left: 0,
+        height: 2,
+        backgroundColor: "#0f172a",
+    },
+    modalLoadingWrap:
+    {
+        paddingVertical: 24,
+        alignItems: "center",
+    },
+    followListContent:
+    {
+        paddingHorizontal: 12,
+        paddingBottom: 16,
+    },
+    emptyListLabel:
+    {
+        fontSize: 13,
+        color: "#64748b",
+        marginTop: 6,
+    },
+    followListRow:
+    {
+        borderWidth: 1,
+        borderColor: "#d9dee5",
+        borderRadius: 10,
+        paddingVertical: 10,
+        paddingHorizontal: 12,
+        marginBottom: 8,
+    },
+    followListUsername:
+    {
+        fontSize: 14,
+        color: "#0f172a",
+        fontWeight: "600",
     },
     panel:
     {
