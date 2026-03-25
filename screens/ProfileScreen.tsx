@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
     ActivityIndicator,
+    Alert,
     Animated,
     Easing,
     FlatList,
+    Image,
     Pressable,
     ScrollView,
     StyleSheet,
@@ -11,6 +13,7 @@ import {
     TextInput,
     View,
 } from "react-native";
+import * as ImagePicker from "expo-image-picker";
 import {
     AuthSession,
     FollowListType,
@@ -287,6 +290,56 @@ export const ProfileScreen = (
         onOpenProfilePress?.(userId);
     };
 
+    const handlePickProfilePhoto = async (): Promise<void> =>
+    {
+        const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+        if (permission.status !== "granted")
+        {
+            Alert.alert(
+                "Permission required",
+                "Please allow photo library access to choose a profile picture.",
+            );
+            return;
+        }
+
+        const pickerResult = await ImagePicker.launchImageLibraryAsync(
+            {
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                allowsEditing: true,
+                aspect: [1, 1],
+                quality: 0.7,
+                base64: true,
+            },
+        );
+
+        if (pickerResult.canceled)
+        {
+            return;
+        }
+
+        const pickedAsset = pickerResult.assets[0];
+
+        if (!pickedAsset)
+        {
+            return;
+        }
+
+        if (pickedAsset.base64)
+        {
+            const mimeType = pickedAsset.mimeType || "image/jpeg";
+            setProfilePhoto(`data:${mimeType};base64,${pickedAsset.base64}`);
+            return;
+        }
+
+        setProfilePhoto(pickedAsset.uri);
+    };
+
+    const handleRemoveProfilePhoto = (): void =>
+    {
+        setProfilePhoto("");
+    };
+
     const initials = useMemo(
         () =>
         {
@@ -391,7 +444,14 @@ export const ProfileScreen = (
                 keyboardShouldPersistTaps="handled"
             >
             <View style={styles.avatarPlaceholder}>
-                <Text style={styles.avatarText}>{initials}</Text>
+                {profilePhoto ? (
+                    <Image
+                        source={{ uri: profilePhoto }}
+                        style={styles.avatarImage}
+                    />
+                ) : (
+                    <Text style={styles.avatarText}>{initials}</Text>
+                )}
             </View>
 
             <Text style={styles.title}>{isInEditMode ? "Edit Profile" : "Profile"}</Text>
@@ -489,16 +549,32 @@ export const ProfileScreen = (
                             placeholderTextColor="#94a3b8"
                         />
 
-                        <Text style={styles.label}>Profile Photo URL</Text>
-                        <TextInput
-                            style={styles.input}
-                            value={profilePhoto}
-                            onChangeText={setProfilePhoto}
-                            editable={!isSaving}
-                            autoCapitalize="none"
-                            placeholder="https://..."
-                            placeholderTextColor="#94a3b8"
-                        />
+                        <Text style={styles.label}>Profile Photo</Text>
+                        <View style={styles.photoActionRow}>
+                            <Pressable
+                                style={styles.secondaryButton}
+                                disabled={isSaving}
+                                onPress={() =>
+                                {
+                                    void handlePickProfilePhoto();
+                                }}
+                            >
+                                <Text style={styles.secondaryButtonText}>Choose From Phone</Text>
+                            </Pressable>
+
+                            <Pressable
+                                style={[
+                                    styles.secondaryButton,
+                                    (!profilePhoto || isSaving) ? styles.saveButtonDisabled : null,
+                                ]}
+                                disabled={!profilePhoto || isSaving}
+                                onPress={handleRemoveProfilePhoto}
+                            >
+                                <Text style={styles.secondaryButtonText}>Remove</Text>
+                            </Pressable>
+                        </View>
+
+                        <Text style={styles.photoHint}>Selected image is saved to your profile.</Text>
 
                         {errorMessage ? (
                             <Text style={styles.errorText}>{errorMessage}</Text>
@@ -554,8 +630,8 @@ export const ProfileScreen = (
                         </View>
 
                         <View style={styles.readOnlyRow}>
-                            <Text style={styles.readOnlyLabel}>Profile Photo URL</Text>
-                            <Text style={styles.readOnlyValue}>{profilePhoto || "-"}</Text>
+                            <Text style={styles.readOnlyLabel}>Profile Photo</Text>
+                            <Text style={styles.readOnlyValue}>{profilePhoto ? "Set" : "-"}</Text>
                         </View>
 
                         {isOwnProfile ? (
@@ -691,11 +767,26 @@ export const ProfileScreen = (
                                 renderItem={
                                     ({ item }) =>
                                     {
+                                        const listInitials = item.username
+                                            ? item.username.slice(0, 2).toUpperCase()
+                                            : "?";
                                         return (
                                             <Pressable
                                                 style={styles.followListRow}
                                                 onPress={() => handleOpenProfileFromFollowList(item.userId)}
                                             >
+                                                <View style={styles.followListAvatar}>
+                                                    {item.profilePhoto ? (
+                                                        <Image
+                                                            source={{ uri: item.profilePhoto }}
+                                                            style={styles.followListAvatarImage}
+                                                        />
+                                                    ) : (
+                                                        <Text style={styles.followListAvatarInitials}>
+                                                            {listInitials}
+                                                        </Text>
+                                                    )}
+                                                </View>
                                                 <Text style={styles.followListUsername}>
                                                     {item.username ? `@${item.username}` : "@unknown"}
                                                 </Text>
@@ -750,6 +841,12 @@ const styles = StyleSheet.create(
         fontSize: 28,
         fontWeight: "700",
         color: "#1d4ed8",
+    },
+    avatarImage:
+    {
+        width: "100%",
+        height: "100%",
+        borderRadius: 42,
     },
     title:
     {
@@ -943,12 +1040,37 @@ const styles = StyleSheet.create(
     },
     followListRow:
     {
+        flexDirection: "row",
+        alignItems: "center",
         borderWidth: 1,
         borderColor: "#d9dee5",
         borderRadius: 10,
         paddingVertical: 10,
         paddingHorizontal: 12,
         marginBottom: 8,
+    },
+    followListAvatar:
+    {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: "#dbeafe",
+        alignItems: "center",
+        justifyContent: "center",
+        marginRight: 10,
+        overflow: "hidden",
+    },
+    followListAvatarImage:
+    {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+    },
+    followListAvatarInitials:
+    {
+        fontSize: 13,
+        fontWeight: "700",
+        color: "#1d4ed8",
     },
     followListUsername:
     {
@@ -1001,6 +1123,18 @@ const styles = StyleSheet.create(
         color: "#0f172a",
         marginBottom: 12,
         fontSize: 14,
+    },
+    photoActionRow:
+    {
+        flexDirection: "row",
+        columnGap: 10,
+        marginBottom: 8,
+    },
+    photoHint:
+    {
+        fontSize: 12,
+        color: "#64748b",
+        marginBottom: 10,
     },
     textArea:
     {

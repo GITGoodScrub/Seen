@@ -1,6 +1,7 @@
 export type FollowUser = {
     userId: number;
     username: string | null;
+    profilePhoto: string | null;
     createdAt: string;
 };
 
