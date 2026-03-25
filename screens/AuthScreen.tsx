@@ -140,6 +140,7 @@ export const AuthScreen = (
                             idToken,
                             accessToken,
                         },
+                        mode === "signup" ? "signup" : "login",
                     );
 
                     setErrorMessage(null);
@@ -157,7 +158,7 @@ export const AuthScreen = (
 
             void completeGoogleSignIn();
         },
-        [googleResponse, onAuthSuccess],
+        [googleResponse, mode, onAuthSuccess],
     );
 
     const switchMode = (nextMode: AuthMode): void =>

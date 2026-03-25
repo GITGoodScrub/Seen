@@ -19,6 +19,7 @@ import { AuthSession, GoogleTokenSet, VerifyAuthResponse } from "./authTypes";
 import { setCurrentUsername } from "./usernameService";
 
 const authVerifyRoute = "/api/auth/verify";
+type AuthIntent = "login" | "signup";
 
 const firebaseConfig = {
     apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
@@ -139,10 +140,13 @@ const getFirebaseAuth = (): Auth =>
     return cachedFirebaseAuth;
 };
 
-const verifyFirebaseTokenWithBackend = async (idToken: string): Promise<AuthSession> =>
+const verifyFirebaseTokenWithBackend = async (
+    idToken: string,
+    intent: AuthIntent = "login",
+): Promise<AuthSession> =>
 {
     const responsePayload = await requestJsonWithFailover<VerifyAuthResponse>(
-        authVerifyRoute,
+        `${authVerifyRoute}?intent=${intent}`,
         {
             headers: {
                 Authorization: `Bearer ${idToken}`,
@@ -163,10 +167,13 @@ const verifyFirebaseTokenWithBackend = async (idToken: string): Promise<AuthSess
     };
 };
 
-const finalizeFirebaseUserAuth = async (firebaseUser: User): Promise<AuthSession> =>
+const finalizeFirebaseUserAuth = async (
+    firebaseUser: User,
+    intent: AuthIntent = "login",
+): Promise<AuthSession> =>
 {
     const idToken = await firebaseUser.getIdToken();
-    return verifyFirebaseTokenWithBackend(idToken);
+    return verifyFirebaseTokenWithBackend(idToken, intent);
 };
 
 export const signUpWithEmail = async (
@@ -180,11 +187,11 @@ export const signUpWithEmail = async (
 
     try
     {
-        const initialSession = await finalizeFirebaseUserAuth(credential.user);
+        const initialSession = await finalizeFirebaseUserAuth(credential.user, "signup");
         await setCurrentUsername(username);
 
         const refreshedToken = await credential.user.getIdToken(true);
-        return verifyFirebaseTokenWithBackend(refreshedToken);
+        return verifyFirebaseTokenWithBackend(refreshedToken, "signup");
     }
     catch (caughtError)
     {
@@ -214,6 +221,7 @@ export const signInWithEmail = async (
 
 export const signInWithGoogle = async (
     tokenSet: GoogleTokenSet,
+    intent: AuthIntent = "login",
 ): Promise<AuthSession> =>
 {
     const auth = getFirebaseAuth();
@@ -229,7 +237,7 @@ export const signInWithGoogle = async (
     const credential = GoogleAuthProvider.credential(idToken, accessToken);
     const userCredential = await signInWithCredential(auth, credential);
 
-    return finalizeFirebaseUserAuth(userCredential.user);
+    return finalizeFirebaseUserAuth(userCredential.user, intent);
 };
 
 export const syncSessionWithBackend = async (
