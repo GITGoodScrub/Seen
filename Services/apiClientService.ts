@@ -5,6 +5,10 @@ type RequestFailure = {
     reason: string;
 };
 
+class TerminalApiError extends Error
+{
+}
+
 const requestTimeoutMs = 7000;
 const maxAttemptsPerBaseUrl = 2;
 const retryDelayMs = 400;
@@ -339,7 +343,7 @@ export const requestJsonWithFailover = async <TResponse>(
                     if (isTerminalClientError(response.status))
                     {
                         const terminalErrorMessage = await getErrorMessageFromResponse(response);
-                        throw new Error(terminalErrorMessage);
+                        throw new TerminalApiError(terminalErrorMessage);
                     }
 
                     failures.push(
@@ -364,6 +368,11 @@ export const requestJsonWithFailover = async <TResponse>(
             }
             catch (caughtError)
             {
+                if (caughtError instanceof TerminalApiError)
+                {
+                    throw caughtError;
+                }
+
                 failures.push(
                     {
                         baseUrl,

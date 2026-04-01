@@ -19,6 +19,7 @@ import { AuthSession, GoogleTokenSet, VerifyAuthResponse } from "./authTypes";
 import { setCurrentUsername } from "./usernameService";
 
 const authVerifyRoute = "/api/auth/verify";
+type AuthIntent = "login" | "signup";
 
 const firebaseConfig = {
     apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
@@ -91,6 +92,24 @@ export const isFirebaseConfigured = (): boolean =>
 
 export const getErrorMessageFromUnknown = (caughtError: unknown): string =>
 {
+    const errorWithCode = caughtError as {
+        code?: unknown;
+        message?: unknown;
+    };
+
+    if (typeof errorWithCode.code === "string")
+    {
+        if (errorWithCode.code === "auth/email-already-in-use")
+        {
+            return "An account with that email already exists. Log in instead, or use password reset if needed.";
+        }
+
+        if (errorWithCode.code === "auth/invalid-credential" || errorWithCode.code === "auth/wrong-password")
+        {
+            return "Incorrect email or password.";
+        }
+    }
+
     if (caughtError instanceof Error)
     {
         return caughtError.message;
@@ -139,10 +158,13 @@ const getFirebaseAuth = (): Auth =>
     return cachedFirebaseAuth;
 };
 
-const verifyFirebaseTokenWithBackend = async (idToken: string): Promise<AuthSession> =>
+const verifyFirebaseTokenWithBackend = async (
+    idToken: string,
+    intent: AuthIntent = "login",
+): Promise<AuthSession> =>
 {
     const responsePayload = await requestJsonWithFailover<VerifyAuthResponse>(
-        authVerifyRoute,
+        `${authVerifyRoute}?intent=${intent}`,
         {
             headers: {
                 Authorization: `Bearer ${idToken}`,
@@ -163,10 +185,13 @@ const verifyFirebaseTokenWithBackend = async (idToken: string): Promise<AuthSess
     };
 };
 
-const finalizeFirebaseUserAuth = async (firebaseUser: User): Promise<AuthSession> =>
+const finalizeFirebaseUserAuth = async (
+    firebaseUser: User,
+    intent: AuthIntent = "login",
+): Promise<AuthSession> =>
 {
     const idToken = await firebaseUser.getIdToken();
-    return verifyFirebaseTokenWithBackend(idToken);
+    return verifyFirebaseTokenWithBackend(idToken, intent);
 };
 
 export const signUpWithEmail = async (
@@ -176,15 +201,40 @@ export const signUpWithEmail = async (
 ): Promise<AuthSession> =>
 {
     const auth = getFirebaseAuth();
-    const credential = await createUserWithEmailAndPassword(auth, email, password);
+
+    let credential: Awaited<ReturnType<typeof createUserWithEmailAndPassword>>;
 
     try
     {
-        const initialSession = await finalizeFirebaseUserAuth(credential.user);
+        credential = await createUserWithEmailAndPassword(auth, email, password);
+    }
+    catch (caughtError)
+    {
+        const errorWithCode = caughtError as {
+            code?: unknown;
+        };
+
+        // If Firebase already has this email, treat signup as a DB account recovery flow.
+        if (typeof errorWithCode.code === "string" && errorWithCode.code === "auth/email-already-in-use")
+        {
+            const existingCredential = await signInWithEmailAndPassword(auth, email, password);
+            const recoveredSession = await finalizeFirebaseUserAuth(existingCredential.user, "signup");
+            await setCurrentUsername(username);
+
+            const refreshedToken = await existingCredential.user.getIdToken(true);
+            return verifyFirebaseTokenWithBackend(refreshedToken, "signup");
+        }
+
+        throw caughtError;
+    }
+
+    try
+    {
+        const initialSession = await finalizeFirebaseUserAuth(credential.user, "signup");
         await setCurrentUsername(username);
 
         const refreshedToken = await credential.user.getIdToken(true);
-        return verifyFirebaseTokenWithBackend(refreshedToken);
+        return verifyFirebaseTokenWithBackend(refreshedToken, "signup");
     }
     catch (caughtError)
     {
@@ -214,6 +264,7 @@ export const signInWithEmail = async (
 
 export const signInWithGoogle = async (
     tokenSet: GoogleTokenSet,
+    intent: AuthIntent = "login",
 ): Promise<AuthSession> =>
 {
     const auth = getFirebaseAuth();
@@ -229,7 +280,7 @@ export const signInWithGoogle = async (
     const credential = GoogleAuthProvider.credential(idToken, accessToken);
     const userCredential = await signInWithCredential(auth, credential);
 
-    return finalizeFirebaseUserAuth(userCredential.user);
+    return finalizeFirebaseUserAuth(userCredential.user, intent);
 };
 
 export const syncSessionWithBackend = async (
