@@ -14,3 +14,5 @@ export * from "./profileTypes";
 export * from "./profileService";
 export * from "./followTypes";
 export * from "./followService";
+export * from "./postTypes";
+export * from "./postService";

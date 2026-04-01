@@ -50,12 +50,19 @@ const renderActiveScreen = (
     onOpenProfilePress: (profileUserId: number) => void,
     onStartProfileEditing: () => void,
     onStopProfileEditing: () => void,
+    feedRefreshKey: number,
     onSessionUpdate?: (nextSession: AuthSession) => void,
 ) =>
 {
     if (activeTabKey === "home")
     {
-        return <HomeScreen onSearchPress={onSearchPress} />;
+        return (
+            <HomeScreen
+                authSession={authSession}
+                onSearchPress={onSearchPress}
+                refreshKey={feedRefreshKey}
+            />
+        );
     }
 
     if (activeTabKey === "discover")
@@ -88,7 +95,13 @@ const renderActiveScreen = (
         );
     }
 
-    return <HomeScreen onSearchPress={onSearchPress} />;
+    return (
+        <HomeScreen
+            authSession={authSession}
+            onSearchPress={onSearchPress}
+            refreshKey={feedRefreshKey}
+        />
+    );
 };
 
 export const AppShellScreen = (
@@ -112,6 +125,7 @@ export const AppShellScreen = (
     );
     const [selectedProfileUserId, setSelectedProfileUserId] = useState<number | null>(null);
     const [isNewPostOpen, setIsNewPostOpen] = useState(false);
+    const [feedRefreshKey, setFeedRefreshKey] = useState(0);
     const [isProfileEditing, setIsProfileEditing] = useState(false);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [isSideMenuVisible, setIsSideMenuVisible] = useState(false);
@@ -235,6 +249,11 @@ export const AppShellScreen = (
         setIsNewPostOpen(false);
     };
 
+    const handlePostCreated = (): void =>
+    {
+        setFeedRefreshKey((k) => k + 1);
+    };
+
     const handleOpenSearch = (): void =>
     {
         resetSideMenu();
@@ -323,7 +342,11 @@ export const AppShellScreen = (
                     edges={["top", "bottom"]}
                     style={styles.composeSafeArea}
                 >
-                    <NewPostScreen onClose={handleCloseNewPost} />
+                    <NewPostScreen
+                        authSession={authSession}
+                        onClose={handleCloseNewPost}
+                        onPostCreated={handlePostCreated}
+                    />
                 </SafeAreaView>
             </View>
         );
@@ -415,6 +438,7 @@ export const AppShellScreen = (
                         handleOpenProfile,
                         handleStartProfileEditing,
                         handleStopProfileEditing,
+                        feedRefreshKey,
                         onSessionUpdate,
                     )}
                 </View>
