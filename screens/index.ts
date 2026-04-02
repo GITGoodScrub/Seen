@@ -5,6 +5,7 @@ export * from "./HomeScreen";
 export * from "./NewPostScreen";
 export * from "./EventCreationScreen";
 export * from "./EventDetailScreen";
+export * from "./VenueDetailScreen";
 export * from "./NotificationsScreen";
 export * from "./ProfileScreen";
 export * from "./SavedEventsScreen";

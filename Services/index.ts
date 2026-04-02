@@ -20,3 +20,5 @@ export * from "./eventTypes";
 export * from "./eventService";
 export * from "./savedEventTypes";
 export * from "./savedEventService";
+export * from "./venueTypes";
+export * from "./venueService";

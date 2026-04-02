@@ -22,6 +22,12 @@ type SavedEventsScreenProps = {
     onEventPress?: (eventSeriesId: number) => void;
 };
 
+const getStars = (rating: number): string =>
+{
+    const safeRating = Math.max(1, Math.min(5, Math.round(rating)));
+    return "★".repeat(safeRating) + "☆".repeat(5 - safeRating);
+};
+
 export const SavedEventsScreen = (
     {
         onSavedEventsChanged,
@@ -159,6 +165,11 @@ export const SavedEventsScreen = (
                                 <Text style={styles.meta}>{item.venueName}</Text>
                                 <Text style={styles.meta}>
                                     {new Date(item.eventStartTime).toLocaleString()}
+                                </Text>
+                                <Text style={styles.meta}>
+                                    {item.averageRating === null
+                                        ? "No ratings yet"
+                                        : `${item.averageRating.toFixed(2)} / 5 (${item.reviewCount}) ${getStars(item.averageRating)}`}
                                 </Text>
                             </Pressable>
 

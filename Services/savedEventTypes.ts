@@ -7,6 +7,8 @@ export type SavedEventItem = {
     seriesId: number;
     seriesTitle: string;
     venueName: string;
+    averageRating: number | null;
+    reviewCount: number;
 };
 
 export type SavedEventsResponse = {

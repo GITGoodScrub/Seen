@@ -26,6 +26,12 @@ const formatDate = (isoString: string | null): string =>
     });
 };
 
+const getStars = (rating: number): string =>
+{
+    const safeRating = Math.max(1, Math.min(5, Math.round(rating)));
+    return "★".repeat(safeRating) + "☆".repeat(5 - safeRating);
+};
+
 export const EventCard = (
     {
         event,
@@ -88,6 +94,15 @@ export const EventCard = (
                     <Ionicons name="calendar-outline" size={14} color="#64748b" />
                     <Text style={styles.metaText}>
                         {formatDate(event.nextOccurrenceAt)}
+                    </Text>
+                </View>
+
+                <View style={styles.metaRow}>
+                    <Ionicons name="star-outline" size={14} color="#64748b" />
+                    <Text style={styles.metaText}>
+                        {event.averageRating === null
+                            ? "No ratings yet"
+                            : `${event.averageRating.toFixed(2)} / 5 (${event.reviewCount}) ${getStars(event.averageRating)}`}
                     </Text>
                 </View>
 

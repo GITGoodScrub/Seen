@@ -11,6 +11,8 @@ type SearchScreenProps = {
     onClose: () => void;
     onSearchSubmit: (searchQuery: string) => void;
     onOpenProfilePress: (profileUserId: number) => void;
+    onOpenVenuePress: (venueId: number) => void;
+    onOpenEventPress: (eventSeriesId: number) => void;
     onClearRecentSearches: () => void;
 };
 
@@ -22,6 +24,27 @@ const getUserIdFromSearchResultId = (searchResultId: string): number | null =>
     }
 
     const idPortion = searchResultId.slice("user-".length);
+    const parsedId = Number(idPortion);
+
+    if (!Number.isFinite(parsedId))
+    {
+        return null;
+    }
+
+    return parsedId;
+};
+
+const getEntityIdByPrefix = (
+    searchResultId: string,
+    expectedPrefix: string,
+): number | null =>
+{
+    if (!searchResultId.startsWith(expectedPrefix))
+    {
+        return null;
+    }
+
+    const idPortion = searchResultId.slice(expectedPrefix.length);
     const parsedId = Number(idPortion);
 
     if (!Number.isFinite(parsedId))
@@ -57,6 +80,8 @@ export const SearchScreen = (
         onClose,
         onSearchSubmit,
         onOpenProfilePress,
+        onOpenVenuePress,
+        onOpenEventPress,
         onClearRecentSearches,
     }: SearchScreenProps,
 ) =>
@@ -149,19 +174,43 @@ export const SearchScreen = (
     {
         handleSubmitSearch(result.title);
 
-        if (result.type !== "user")
+        if (result.type === "user")
         {
+            const profileUserId = getUserIdFromSearchResultId(result.id);
+
+            if (profileUserId === null)
+            {
+                return;
+            }
+
+            onOpenProfilePress(profileUserId);
             return;
         }
 
-        const profileUserId = getUserIdFromSearchResultId(result.id);
-
-        if (profileUserId === null)
+        if (result.type === "venue")
         {
+            const venueId = getEntityIdByPrefix(result.id, "venue-");
+
+            if (venueId === null)
+            {
+                return;
+            }
+
+            onOpenVenuePress(venueId);
             return;
         }
 
-        onOpenProfilePress(profileUserId);
+        if (result.type === "event")
+        {
+            const eventSeriesId = getEntityIdByPrefix(result.id, "event-");
+
+            if (eventSeriesId === null)
+            {
+                return;
+            }
+
+            onOpenEventPress(eventSeriesId);
+        }
     };
 
     const renderRecentSearches = () =>
@@ -252,7 +301,7 @@ export const SearchScreen = (
                         autoFocus={true}
                         value={searchQuery}
                         onChangeText={setSearchQuery}
-                        placeholder="Search people, venues, and posts"
+                        placeholder="Search people, events, and venues"
                         placeholderTextColor="#64748b"
                         style={styles.input}
                         returnKeyType="search"

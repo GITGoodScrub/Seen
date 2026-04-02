@@ -21,6 +21,8 @@ const isSavedEventItem = (value: unknown): value is SavedEventItem =>
         && typeof c.seriesId === "number"
         && typeof c.seriesTitle === "string"
         && typeof c.venueName === "string"
+        && (c.averageRating === null || typeof c.averageRating === "number")
+        && typeof c.reviewCount === "number"
     );
 };
 

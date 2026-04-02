@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
     ActivityIndicator,
     Alert,
+    Image,
     Pressable,
     RefreshControl,
     ScrollView,
@@ -11,43 +12,17 @@ import {
     View,
 } from "react-native";
 import {
-    createSeriesReview,
-    EventOccurrenceDetail,
-    EventSeriesReviewItem,
-    EventSeriesDetail,
+    createVenueReview,
+    VenueDetail,
     getErrorMessageFromUnknown,
-    loadEventSeriesDetail,
+    loadVenueDetail,
 } from "../Services";
 
-type EventDetailScreenProps = {
-    eventSeriesId: number;
-    onOpenVenuePress?: (venueId: number) => void;
+type VenueDetailScreenProps = {
+    venueId: number;
 };
 
-const formatDateTime = (isoString: string): string =>
-{
-    const date = new Date(isoString);
-    return date.toLocaleString("en-GB", {
-        weekday: "short",
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-    });
-};
-
-const renderOccurrenceTitle = (occurrence: EventOccurrenceDetail, fallback: string): string =>
-{
-    if (occurrence.title && occurrence.title.trim().length > 0)
-    {
-        return occurrence.title;
-    }
-
-    return fallback;
-};
-
-const formatReviewDate = (isoString: string): string =>
+const formatDate = (isoString: string): string =>
 {
     const date = new Date(isoString);
     return date.toLocaleDateString("en-GB", {
@@ -63,14 +38,9 @@ const getStars = (rating: number): string =>
     return "★".repeat(safeRating) + "☆".repeat(5 - safeRating);
 };
 
-export const EventDetailScreen = (
-    {
-        eventSeriesId,
-        onOpenVenuePress,
-    }: EventDetailScreenProps,
-) =>
+export const VenueDetailScreen = ({ venueId }: VenueDetailScreenProps) =>
 {
-    const [eventDetail, setEventDetail] = useState<EventSeriesDetail | null>(null);
+    const [venue, setVenue] = useState<VenueDetail | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -94,12 +64,12 @@ export const EventDetailScreen = (
 
             try
             {
-                const detail = await loadEventSeriesDetail(eventSeriesId);
-                setEventDetail(detail);
+                const detail = await loadVenueDetail(venueId);
+                setVenue(detail);
             }
             catch (caughtError)
             {
-                setEventDetail(null);
+                setVenue(null);
                 setErrorMessage(getErrorMessageFromUnknown(caughtError));
             }
             finally
@@ -114,7 +84,7 @@ export const EventDetailScreen = (
                 }
             }
         },
-        [eventSeriesId],
+        [venueId],
     );
 
     useEffect(
@@ -123,32 +93,6 @@ export const EventDetailScreen = (
             void loadDetail();
         },
         [loadDetail],
-    );
-
-    const artistSummary = useMemo(
-        () =>
-        {
-            if (!eventDetail)
-            {
-                return "";
-            }
-
-            const artistNames = Array.from(
-                new Set(
-                    eventDetail.occurrences.flatMap((occurrence) =>
-                        occurrence.artists.map((artist) => artist.name),
-                    ),
-                ),
-            );
-
-            if (artistNames.length === 0)
-            {
-                return "No artists attached yet";
-            }
-
-            return artistNames.join(", ");
-        },
-        [eventDetail],
     );
 
     const handleSubmitReview = async (): Promise<void> =>
@@ -169,9 +113,9 @@ export const EventDetailScreen = (
 
         try
         {
-            await createSeriesReview(
+            await createVenueReview(
                 {
-                    seriesId: eventSeriesId,
+                    venueId,
                     rating: reviewRating,
                     text: reviewText.trim(),
                     visibility: "public",
@@ -202,7 +146,7 @@ export const EventDetailScreen = (
         );
     }
 
-    if (errorMessage !== null)
+    if (errorMessage)
     {
         return (
             <View style={styles.centered}>
@@ -211,11 +155,11 @@ export const EventDetailScreen = (
         );
     }
 
-    if (!eventDetail)
+    if (!venue)
     {
         return (
             <View style={styles.centered}>
-                <Text style={styles.emptyText}>Event details unavailable.</Text>
+                <Text style={styles.emptyText}>Venue unavailable.</Text>
             </View>
         );
     }
@@ -231,38 +175,28 @@ export const EventDetailScreen = (
             }
         >
             <View style={styles.card}>
-                <Text style={styles.title}>{eventDetail.title}</Text>
-                <Pressable
-                    onPress={() => onOpenVenuePress?.(eventDetail.venueId)}
-                    style={styles.venueButton}
-                >
-                    <Text style={styles.venueText}>{eventDetail.venueName}</Text>
-                </Pressable>
-                <Text style={styles.metaText}>Status: {eventDetail.status}</Text>
-                {eventDetail.ageLimit !== null ? (
-                    <Text style={styles.metaText}>Age limit: {eventDetail.ageLimit}+</Text>
-                ) : null}
-                <Text style={styles.description}>{eventDetail.description}</Text>
-            </View>
-
-            <View style={styles.card}>
-                <Text style={styles.sectionTitle}>Artists</Text>
-                <Text style={styles.bodyText}>{artistSummary}</Text>
-            </View>
-
-            <View style={styles.card}>
-                <Text style={styles.sectionTitle}>Series Rating</Text>
-                {eventDetail.averageRating === null ? (
-                    <Text style={styles.bodyText}>No ratings yet.</Text>
+                {venue.photo ? (
+                    <Image source={{ uri: venue.photo }} style={styles.photo} />
                 ) : (
-                    <>
-                        <Text style={styles.ratingText}>
-                            {eventDetail.averageRating.toFixed(2)} / 5 ({eventDetail.reviewCount} reviews)
-                        </Text>
-                        <Text style={styles.ratingStars}>{getStars(eventDetail.averageRating)}</Text>
-                    </>
+                    <View style={styles.photoPlaceholder}>
+                        <Text style={styles.photoPlaceholderText}>No image</Text>
+                    </View>
                 )}
 
+                <Text style={styles.title}>{venue.name}</Text>
+                <Text style={styles.ratingText}>
+                    {venue.averageRating === null
+                        ? "No ratings yet"
+                        : `${venue.averageRating.toFixed(2)} / 5 (${venue.reviewCount} reviews)`}
+                </Text>
+                {venue.averageRating !== null ? (
+                    <Text style={styles.starText}>{getStars(venue.averageRating)}</Text>
+                ) : null}
+                <Text style={styles.bioText}>{venue.bio?.trim() || "No venue description yet."}</Text>
+            </View>
+
+            <View style={styles.card}>
+                <Text style={styles.sectionTitle}>Reviews</Text>
                 <View style={styles.reviewComposer}>
                     <Text style={styles.reviewComposerTitle}>Leave a review</Text>
                     <View style={styles.starPickerRow}>
@@ -303,49 +237,43 @@ export const EventDetailScreen = (
                         </Text>
                     </Pressable>
                 </View>
-            </View>
 
-            <View style={styles.card}>
-                <Text style={styles.sectionTitle}>Reviews</Text>
-                {eventDetail.reviews.length === 0 ? (
-                    <Text style={styles.bodyText}>No reviews yet.</Text>
+                {venue.reviews.length === 0 ? (
+                    <Text style={styles.emptyText}>No reviews yet.</Text>
                 ) : (
-                    eventDetail.reviews.map((review) => (
-                        <View key={review.reviewId} style={styles.occurrenceRow}>
+                    venue.reviews.map((review) => (
+                        <View key={review.reviewId} style={styles.reviewRow}>
                             <Text style={styles.reviewTopLine}>
                                 {(review.username ? `@${review.username}` : "Unknown user")}
                                 {" · "}
                                 {review.rating}/5
                                 {" · "}
-                                {formatReviewDate(review.createdAt)}
+                                {formatDate(review.createdAt)}
                             </Text>
                             <Text style={styles.reviewStars}>{getStars(review.rating)}</Text>
-                            <Text style={styles.bodyText}>{review.text}</Text>
+                            <Text style={styles.reviewText}>{review.text}</Text>
                         </View>
                     ))
                 )}
             </View>
 
             <View style={styles.card}>
-                <Text style={styles.sectionTitle}>Occurrences</Text>
-                {eventDetail.occurrences.length === 0 ? (
-                    <Text style={styles.bodyText}>No occurrences yet.</Text>
+                <Text style={styles.sectionTitle}>Upcoming Events</Text>
+                {venue.upcomingEvents.length === 0 ? (
+                    <Text style={styles.emptyText}>No upcoming events at this venue.</Text>
                 ) : (
-                    eventDetail.occurrences.map((occurrence) => (
-                        <View key={occurrence.id} style={styles.occurrenceRow}>
-                            <Text style={styles.occurrenceTitle}>
-                                {renderOccurrenceTitle(occurrence, eventDetail.title)}
+                    venue.upcomingEvents.map((eventItem) => (
+                        <View key={eventItem.occurrenceId} style={styles.reviewRow}>
+                            <Text style={styles.occurrenceTitle}>{eventItem.title}</Text>
+                            <Text style={styles.metaText}>{formatDate(eventItem.startTime)}</Text>
+                            <Text style={styles.metaText}>
+                                {new Date(eventItem.startTime).toLocaleTimeString("en-GB", {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                })}
+                                {" · "}
+                                {eventItem.status}
                             </Text>
-                            <Text style={styles.metaText}>{formatDateTime(occurrence.startTime)}</Text>
-                            {occurrence.durationMinutes !== null ? (
-                                <Text style={styles.metaText}>Duration: {occurrence.durationMinutes} min</Text>
-                            ) : null}
-                            <Text style={styles.metaText}>Status: {occurrence.status}</Text>
-                            {occurrence.artists.length > 0 ? (
-                                <Text style={styles.metaText}>
-                                    Lineup: {occurrence.artists.map((artist) => artist.name).join(", ")}
-                                </Text>
-                            ) : null}
                         </View>
                     ))
                 )}
@@ -376,22 +304,46 @@ const styles = StyleSheet.create({
         borderColor: "#d9dee5",
         padding: 14,
     },
+    photo: {
+        width: "100%",
+        height: 180,
+        borderRadius: 10,
+        marginBottom: 10,
+        backgroundColor: "#e2e8f0",
+    },
+    photoPlaceholder: {
+        width: "100%",
+        height: 180,
+        borderRadius: 10,
+        marginBottom: 10,
+        backgroundColor: "#f1f5f9",
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    photoPlaceholderText: {
+        color: "#94a3b8",
+        fontWeight: "600",
+    },
     title: {
-        fontSize: 20,
+        fontSize: 22,
         fontWeight: "700",
         color: "#0f172a",
-        marginBottom: 8,
+        marginBottom: 6,
     },
-    venueButton: {
-        alignSelf: "flex-start",
-        paddingVertical: 2,
-        marginBottom: 2,
-    },
-    venueText: {
+    ratingText: {
         fontSize: 14,
-        fontWeight: "700",
-        color: "#1d4ed8",
-        textDecorationLine: "underline",
+        color: "#334155",
+    },
+    starText: {
+        marginTop: 2,
+        marginBottom: 8,
+        fontSize: 14,
+        color: "#f59e0b",
+    },
+    bioText: {
+        fontSize: 14,
+        lineHeight: 20,
+        color: "#475569",
     },
     sectionTitle: {
         fontSize: 16,
@@ -399,31 +351,11 @@ const styles = StyleSheet.create({
         color: "#0f172a",
         marginBottom: 8,
     },
-    description: {
-        fontSize: 14,
-        lineHeight: 20,
-        color: "#334155",
-        marginTop: 8,
-    },
-    bodyText: {
-        fontSize: 14,
-        color: "#475569",
-    },
-    ratingText: {
-        fontSize: 14,
-        color: "#334155",
-    },
-    ratingStars: {
-        marginTop: 2,
-        marginBottom: 8,
-        fontSize: 14,
-        color: "#f59e0b",
-    },
     reviewComposer: {
-        marginTop: 10,
-        paddingTop: 10,
-        borderTopWidth: 1,
-        borderTopColor: "#eef2f7",
+        marginBottom: 10,
+        paddingBottom: 10,
+        borderBottomWidth: 1,
+        borderBottomColor: "#eef2f7",
     },
     reviewComposerTitle: {
         fontSize: 14,
@@ -478,14 +410,10 @@ const styles = StyleSheet.create({
         fontWeight: "700",
         fontSize: 13,
     },
-    reviewTopLine: {
-        fontSize: 12,
-        color: "#64748b",
-        marginBottom: 4,
-    },
-    reviewStars: {
-        fontSize: 13,
-        color: "#f59e0b",
+    occurrenceTitle: {
+        fontSize: 14,
+        fontWeight: "700",
+        color: "#0f172a",
         marginBottom: 4,
     },
     metaText: {
@@ -493,22 +421,30 @@ const styles = StyleSheet.create({
         color: "#64748b",
         marginBottom: 2,
     },
-    occurrenceRow: {
+    reviewRow: {
         borderTopWidth: 1,
         borderTopColor: "#eef2f7",
         paddingTop: 10,
         marginTop: 10,
     },
-    occurrenceTitle: {
-        fontSize: 14,
-        fontWeight: "700",
-        color: "#0f172a",
+    reviewTopLine: {
+        fontSize: 12,
+        color: "#64748b",
+        marginBottom: 2,
+    },
+    reviewStars: {
+        fontSize: 13,
+        color: "#f59e0b",
         marginBottom: 4,
+    },
+    reviewText: {
+        fontSize: 14,
+        color: "#334155",
+        lineHeight: 20,
     },
     emptyText: {
         fontSize: 14,
         color: "#64748b",
-        textAlign: "center",
     },
     errorText: {
         fontSize: 14,

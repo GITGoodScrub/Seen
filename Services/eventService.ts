@@ -4,6 +4,7 @@ import {
     CreateEventOccurrenceResponse,
     CreateEventSeriesRequest,
     CreateEventSeriesResponse,
+    CreateSeriesReviewRequest,
     CreatedEventOccurrence,
     EventOccurrenceDetail,
     EventSeriesDetail,
@@ -16,6 +17,7 @@ const eventSeriesRoute = "/api/eventSeries";
 const eventSeriesDetailRoute = (id: number): string => `/api/eventSeries/${id}`;
 const createEventOccurrenceRoute = "/api/createEventOccurance";
 const eventArtistsRoute = "/api/eventArtists";
+const seriesReviewsRoute = "/api/seriesReviews";
 
 // ─── Type guards ─────────────────────────────────────────────────────────────
 
@@ -35,6 +37,8 @@ const isEventSeriesItem = (value: unknown): value is EventSeriesItem =>
         status?: unknown;
         createdAt?: unknown;
         nextOccurrenceId?: unknown;
+        averageRating?: unknown;
+        reviewCount?: unknown;
     };
 
     return (
@@ -46,6 +50,8 @@ const isEventSeriesItem = (value: unknown): value is EventSeriesItem =>
         && typeof c.status === "string"
         && typeof c.createdAt === "string"
         && (c.nextOccurrenceId === null || typeof c.nextOccurrenceId === "number")
+        && (c.averageRating === null || typeof c.averageRating === "number")
+        && typeof c.reviewCount === "number"
     );
 };
 
@@ -69,6 +75,7 @@ const isEventSeriesDetail = (value: unknown): value is EventSeriesDetail =>
 
     const c = value as {
         id?: unknown;
+        venueId?: unknown;
         title?: unknown;
         venueName?: unknown;
         occurrences?: unknown;
@@ -76,6 +83,7 @@ const isEventSeriesDetail = (value: unknown): value is EventSeriesDetail =>
 
     return (
         typeof c.id === "number"
+        && typeof c.venueId === "number"
         && typeof c.title === "string"
         && typeof c.venueName === "string"
         && Array.isArray(c.occurrences)
@@ -233,6 +241,20 @@ export const removeArtistFromOccurrence = async (
             method: "DELETE",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ occurrenceId, artistId }),
+        },
+    );
+};
+
+export const createSeriesReview = async (
+    request: CreateSeriesReviewRequest,
+): Promise<void> =>
+{
+    await requestJsonWithFailover<{ seriesReview: unknown }>(
+        seriesReviewsRoute,
+        {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(request),
         },
     );
 };

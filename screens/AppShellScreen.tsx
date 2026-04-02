@@ -1,5 +1,5 @@
 import { StatusBar } from "expo-status-bar";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Animated, Easing, Pressable, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AppHeader, BottomTabBar, SideMenuDrawer } from "../components";
@@ -13,7 +13,6 @@ import {
     getDefaultTabKey,
     getDefaultRecentSearches,
     getSideMenuItems,
-    loadSavedEvents,
 } from "../Services";
 import { DiscoverScreen } from "./DiscoverScreen";
 import { EventCreationScreen } from "./EventCreationScreen";
@@ -24,6 +23,7 @@ import { NotificationsScreen } from "./NotificationsScreen";
 import { ProfileScreen } from "./ProfileScreen";
 import { SavedEventsScreen } from "./SavedEventsScreen";
 import { SearchScreen } from "./SearchScreen";
+import { VenueDetailScreen } from "./VenueDetailScreen";
 
 type AppShellScreenProps = {
     authSession: AuthSession;
@@ -48,7 +48,6 @@ const renderActiveScreen = (
     activeTabKey: AppTabKey,
     onSearchPress: () => void,
     discoverRefreshKey: number,
-    onSavedEventsChanged: () => void,
     onOpenEventPress: (eventId: number) => void,
     authSession: AuthSession,
     selectedProfileUserId: number | null,
@@ -77,7 +76,6 @@ const renderActiveScreen = (
             <DiscoverScreen
                 onSearchPress={onSearchPress}
                 refreshKey={discoverRefreshKey}
-                onSavedEventsChanged={onSavedEventsChanged}
                 onEventPress={onOpenEventPress}
             />
         );
@@ -87,7 +85,6 @@ const renderActiveScreen = (
     {
         return (
             <SavedEventsScreen
-                onSavedEventsChanged={onSavedEventsChanged}
                 onEventPress={onOpenEventPress}
             />
         );
@@ -145,12 +142,12 @@ export const AppShellScreen = (
     const [isNewPostOpen, setIsNewPostOpen] = useState(false);
     const [isEventCreationOpen, setIsEventCreationOpen] = useState(false);
     const [openEventSeriesId, setOpenEventSeriesId] = useState<number | null>(null);
+    const [openVenueId, setOpenVenueId] = useState<number | null>(null);
     const [feedRefreshKey, setFeedRefreshKey] = useState(0);
     const [discoverRefreshKey, setDiscoverRefreshKey] = useState(0);
     const [isProfileEditing, setIsProfileEditing] = useState(false);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [isSideMenuVisible, setIsSideMenuVisible] = useState(false);
-    const [savedEventsCount, setSavedEventsCount] = useState(0);
     const [recentSearches, setRecentSearches] = useState<string[]>(
         getDefaultRecentSearches(),
     );
@@ -285,12 +282,24 @@ export const AppShellScreen = (
 
     const handleOpenEventDetails = (eventSeriesId: number): void =>
     {
+        setIsSearchOpen(false);
         setOpenEventSeriesId(eventSeriesId);
     };
 
     const handleCloseEventDetails = (): void =>
     {
         setOpenEventSeriesId(null);
+    };
+
+    const handleOpenVenueDetails = (venueId: number): void =>
+    {
+        setIsSearchOpen(false);
+        setOpenVenueId(venueId);
+    };
+
+    const handleCloseVenueDetails = (): void =>
+    {
+        setOpenVenueId(null);
     };
 
     const handlePostCreated = (): void =>
@@ -302,30 +311,6 @@ export const AppShellScreen = (
     {
         setDiscoverRefreshKey((k) => k + 1);
     };
-
-    const refreshSavedEventsCount = useCallback(
-        async (): Promise<void> =>
-        {
-            try
-            {
-                const savedEvents = await loadSavedEvents();
-                setSavedEventsCount(savedEvents.length);
-            }
-            catch
-            {
-                setSavedEventsCount(0);
-            }
-        },
-        [],
-    );
-
-    useEffect(
-        () =>
-        {
-            void refreshSavedEventsCount();
-        },
-        [refreshSavedEventsCount],
-    );
 
     const handleOpenSearch = (): void =>
     {
@@ -451,6 +436,33 @@ export const AppShellScreen = (
         );
     }
 
+    if (openVenueId !== null)
+    {
+        return (
+            <View style={styles.container}>
+                <StatusBar style="dark" />
+
+                <SafeAreaView
+                    edges={["top", "bottom"]}
+                    style={styles.searchSafeArea}
+                >
+                    <View style={styles.eventDetailTopRow}>
+                        <Pressable
+                            style={styles.eventDetailBackButton}
+                            onPress={handleCloseVenueDetails}
+                        >
+                            <Animated.Text style={styles.eventDetailBackText}>Back</Animated.Text>
+                        </Pressable>
+                        <Animated.Text style={styles.eventDetailHeaderTitle}>Venue Details</Animated.Text>
+                        <View style={styles.eventDetailSpacer} />
+                    </View>
+
+                    <VenueDetailScreen venueId={openVenueId} />
+                </SafeAreaView>
+            </View>
+        );
+    }
+
     if (openEventSeriesId !== null)
     {
         return (
@@ -472,7 +484,10 @@ export const AppShellScreen = (
                         <View style={styles.eventDetailSpacer} />
                     </View>
 
-                    <EventDetailScreen eventSeriesId={openEventSeriesId} />
+                    <EventDetailScreen
+                        eventSeriesId={openEventSeriesId}
+                        onOpenVenuePress={handleOpenVenueDetails}
+                    />
                 </SafeAreaView>
             </View>
         );
@@ -493,6 +508,8 @@ export const AppShellScreen = (
                         onClose={handleCloseSearch}
                         onSearchSubmit={handleSearchSubmit}
                         onOpenProfilePress={handleOpenProfile}
+                        onOpenVenuePress={handleOpenVenueDetails}
+                        onOpenEventPress={handleOpenEventDetails}
                         onClearRecentSearches={handleClearRecentSearches}
                     />
                 </SafeAreaView>
@@ -559,10 +576,6 @@ export const AppShellScreen = (
                         activeTabKey,
                         handleOpenSearch,
                         discoverRefreshKey,
-                        () =>
-                        {
-                            void refreshSavedEventsCount();
-                        },
                         handleOpenEventDetails,
                         authSession,
                         selectedProfileUserId,
@@ -583,7 +596,6 @@ export const AppShellScreen = (
                         tabs={tabs}
                         activeTabKey={activeTabKey}
                         onTabPress={handleTabPress}
-                        badgeCountByTab={{ saved: savedEventsCount }}
                     />
                 </SafeAreaView>
 

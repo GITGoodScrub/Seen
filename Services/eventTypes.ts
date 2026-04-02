@@ -13,6 +13,8 @@ export type EventSeriesItem = {
     createdAt: string;
     nextOccurrenceAt: string | null;
     nextOccurrenceId: number | null;
+    averageRating: number | null;
+    reviewCount: number;
 };
 
 export type EventSeriesFeedResponse = {
@@ -36,8 +38,18 @@ export type EventOccurrenceDetail = {
     artists: EventArtistItem[];
 };
 
+export type EventSeriesReviewItem = {
+    reviewId: number;
+    username: string | null;
+    rating: number;
+    text: string;
+    visibility: string;
+    createdAt: string;
+};
+
 export type EventSeriesDetail = {
     id: number;
+    venueId: number;
     title: string;
     description: string;
     posterURL: string | null;
@@ -50,6 +62,9 @@ export type EventSeriesDetail = {
     venueLatitude: number;
     venueLongitude: number;
     venuePhoto: string | null;
+    averageRating: number | null;
+    reviewCount: number;
+    reviews: EventSeriesReviewItem[];
     occurrences: EventOccurrenceDetail[];
 };
 
@@ -93,4 +108,11 @@ export type CreatedEventOccurrence = {
 
 export type CreateEventOccurrenceResponse = {
     eventOccurrence: CreatedEventOccurrence;
+};
+
+export type CreateSeriesReviewRequest = {
+    seriesId: number;
+    rating: number;
+    text: string;
+    visibility: "public" | "friendsOnly" | "private";
 };

@@ -20,6 +20,7 @@ import {
     FollowUser,
     loadFollowUsers,
     loadFollowSnapshot,
+    ProfileActivityItem,
     ProfileRecord,
     getErrorMessageFromUnknown,
     getUsernameValidationMessage,
@@ -42,6 +43,38 @@ type ProfileScreenProps = {
 const safeString = (value: string | null | undefined): string =>
 {
     return value ?? "";
+};
+
+const formatActivityDate = (isoString: string): string =>
+{
+    const date = new Date(isoString);
+
+    return date.toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+    });
+};
+
+const getStars = (rating: number): string =>
+{
+    const safeRating = Math.max(1, Math.min(5, Math.round(rating)));
+    return "★".repeat(safeRating) + "☆".repeat(5 - safeRating);
+};
+
+const getActivityTypeLabel = (activityType: ProfileActivityItem["type"]): string =>
+{
+    if (activityType === "seriesReview")
+    {
+        return "Event Review";
+    }
+
+    if (activityType === "venueReview")
+    {
+        return "Venue Review";
+    }
+
+    return "Post";
 };
 
 const VerifiedBadge = () =>
@@ -81,6 +114,7 @@ export const ProfileScreen = (
     const [isFollowListLoading, setIsFollowListLoading] = useState(false);
     const [followListErrorMessage, setFollowListErrorMessage] = useState<string | null>(null);
     const [followListUsers, setFollowListUsers] = useState<FollowUser[]>([]);
+    const [profileActivity, setProfileActivity] = useState<ProfileActivityItem[]>([]);
     const [followListTabRowWidth, setFollowListTabRowWidth] = useState(0);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -139,6 +173,7 @@ export const ProfileScreen = (
                     setBio(safeString(profile.bio));
                     setProfilePhoto(safeString(profile.profilePhoto));
                     setIsVerified(profile.isVerified);
+                    setProfileActivity(profile.activity ?? []);
                     setFollowingCount(followSnapshot.followingCount);
                     setFollowersCount(followSnapshot.followersCount);
                     setIsFollowingTarget(followSnapshot.isFollowingTarget);
@@ -153,6 +188,7 @@ export const ProfileScreen = (
                     }
 
                     setErrorMessage(getErrorMessageFromUnknown(caughtError));
+                    setProfileActivity([]);
                 }
                 finally
                 {
@@ -659,6 +695,32 @@ export const ProfileScreen = (
                     </>
                 )}
             </View>
+
+            <View style={styles.panel}>
+                <Text style={styles.sectionTitle}>Posts & Reviews</Text>
+                {profileActivity.length === 0 ? (
+                    <Text style={styles.readOnlyValue}>No activity yet.</Text>
+                ) : (
+                    profileActivity.map((activityItem) => (
+                        <View key={activityItem.id} style={styles.activityRow}>
+                            <Text style={styles.activityMetaText}>
+                                {getActivityTypeLabel(activityItem.type)}
+                                {" · "}
+                                {formatActivityDate(activityItem.createdAt)}
+                            </Text>
+                            {activityItem.targetName ? (
+                                <Text style={styles.activityTargetName}>{activityItem.targetName}</Text>
+                            ) : null}
+                            {activityItem.rating !== null ? (
+                                <Text style={styles.activityRatingText}>
+                                    {activityItem.rating}/5 {getStars(activityItem.rating)}
+                                </Text>
+                            ) : null}
+                            <Text style={styles.readOnlyValue}>{activityItem.text}</Text>
+                        </View>
+                    ))
+                )}
+            </View>
             </ScrollView>
 
             {isFollowListVisible ? (
@@ -1129,6 +1191,40 @@ const styles = StyleSheet.create(
         padding: 16,
         borderWidth: 1,
         borderColor: "#e2e8f0",
+        marginTop: 12,
+    },
+    sectionTitle:
+    {
+        fontSize: 16,
+        fontWeight: "700",
+        color: "#0f172a",
+        marginBottom: 10,
+    },
+    activityRow:
+    {
+        borderTopWidth: 1,
+        borderTopColor: "#e2e8f0",
+        paddingTop: 10,
+        marginTop: 10,
+    },
+    activityMetaText:
+    {
+        fontSize: 12,
+        color: "#64748b",
+        marginBottom: 4,
+    },
+    activityTargetName:
+    {
+        fontSize: 13,
+        color: "#334155",
+        fontWeight: "700",
+        marginBottom: 4,
+    },
+    activityRatingText:
+    {
+        fontSize: 13,
+        color: "#f59e0b",
+        marginBottom: 4,
     },
     readOnlyRow:
     {
