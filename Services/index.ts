@@ -16,3 +16,7 @@ export * from "./followTypes";
 export * from "./followService";
 export * from "./postTypes";
 export * from "./postService";
+export * from "./eventTypes";
+export * from "./eventService";
+export * from "./savedEventTypes";
+export * from "./savedEventService";

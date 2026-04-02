@@ -1,5 +1,5 @@
 import { StatusBar } from "expo-status-bar";
-import { useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Easing, Pressable, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AppHeader, BottomTabBar, SideMenuDrawer } from "../components";
@@ -13,8 +13,11 @@ import {
     getDefaultTabKey,
     getDefaultRecentSearches,
     getSideMenuItems,
+    loadSavedEvents,
 } from "../Services";
 import { DiscoverScreen } from "./DiscoverScreen";
+import { EventCreationScreen } from "./EventCreationScreen";
+import { EventDetailScreen } from "./EventDetailScreen";
 import { HomeScreen } from "./HomeScreen";
 import { NewPostScreen } from "./NewPostScreen";
 import { NotificationsScreen } from "./NotificationsScreen";
@@ -44,6 +47,9 @@ const isAppTabKey = (value: string): value is AppTabKey =>
 const renderActiveScreen = (
     activeTabKey: AppTabKey,
     onSearchPress: () => void,
+    discoverRefreshKey: number,
+    onSavedEventsChanged: () => void,
+    onOpenEventPress: (eventId: number) => void,
     authSession: AuthSession,
     selectedProfileUserId: number | null,
     isProfileEditing: boolean,
@@ -67,12 +73,24 @@ const renderActiveScreen = (
 
     if (activeTabKey === "discover")
     {
-        return <DiscoverScreen onSearchPress={onSearchPress} />;
+        return (
+            <DiscoverScreen
+                onSearchPress={onSearchPress}
+                refreshKey={discoverRefreshKey}
+                onSavedEventsChanged={onSavedEventsChanged}
+                onEventPress={onOpenEventPress}
+            />
+        );
     }
 
     if (activeTabKey === "saved")
     {
-        return <SavedEventsScreen />;
+        return (
+            <SavedEventsScreen
+                onSavedEventsChanged={onSavedEventsChanged}
+                onEventPress={onOpenEventPress}
+            />
+        );
     }
 
     if (activeTabKey === "notifications")
@@ -125,10 +143,14 @@ export const AppShellScreen = (
     );
     const [selectedProfileUserId, setSelectedProfileUserId] = useState<number | null>(null);
     const [isNewPostOpen, setIsNewPostOpen] = useState(false);
+    const [isEventCreationOpen, setIsEventCreationOpen] = useState(false);
+    const [openEventSeriesId, setOpenEventSeriesId] = useState<number | null>(null);
     const [feedRefreshKey, setFeedRefreshKey] = useState(0);
+    const [discoverRefreshKey, setDiscoverRefreshKey] = useState(0);
     const [isProfileEditing, setIsProfileEditing] = useState(false);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [isSideMenuVisible, setIsSideMenuVisible] = useState(false);
+    const [savedEventsCount, setSavedEventsCount] = useState(0);
     const [recentSearches, setRecentSearches] = useState<string[]>(
         getDefaultRecentSearches(),
     );
@@ -249,10 +271,61 @@ export const AppShellScreen = (
         setIsNewPostOpen(false);
     };
 
+    const handleOpenEventCreation = (): void =>
+    {
+        resetSideMenu();
+        setIsSearchOpen(false);
+        setIsEventCreationOpen(true);
+    };
+
+    const handleCloseEventCreation = (): void =>
+    {
+        setIsEventCreationOpen(false);
+    };
+
+    const handleOpenEventDetails = (eventSeriesId: number): void =>
+    {
+        setOpenEventSeriesId(eventSeriesId);
+    };
+
+    const handleCloseEventDetails = (): void =>
+    {
+        setOpenEventSeriesId(null);
+    };
+
     const handlePostCreated = (): void =>
     {
         setFeedRefreshKey((k) => k + 1);
     };
+
+    const handleEventCreated = (): void =>
+    {
+        setDiscoverRefreshKey((k) => k + 1);
+    };
+
+    const refreshSavedEventsCount = useCallback(
+        async (): Promise<void> =>
+        {
+            try
+            {
+                const savedEvents = await loadSavedEvents();
+                setSavedEventsCount(savedEvents.length);
+            }
+            catch
+            {
+                setSavedEventsCount(0);
+            }
+        },
+        [],
+    );
+
+    useEffect(
+        () =>
+        {
+            void refreshSavedEventsCount();
+        },
+        [refreshSavedEventsCount],
+    );
 
     const handleOpenSearch = (): void =>
     {
@@ -285,6 +358,12 @@ export const AppShellScreen = (
             }
 
             handleStartProfileEditing();
+            return;
+        }
+
+        if (activeTabKey === "discover")
+        {
+            handleOpenEventCreation();
             return;
         }
 
@@ -347,6 +426,53 @@ export const AppShellScreen = (
                         onClose={handleCloseNewPost}
                         onPostCreated={handlePostCreated}
                     />
+                </SafeAreaView>
+            </View>
+        );
+    }
+
+    if (isEventCreationOpen)
+    {
+        return (
+            <View style={styles.container}>
+                <StatusBar style="dark" />
+
+                <SafeAreaView
+                    edges={["top", "bottom"]}
+                    style={styles.composeSafeArea}
+                >
+                    <EventCreationScreen
+                        authSession={authSession}
+                        onClose={handleCloseEventCreation}
+                        onEventCreated={handleEventCreated}
+                    />
+                </SafeAreaView>
+            </View>
+        );
+    }
+
+    if (openEventSeriesId !== null)
+    {
+        return (
+            <View style={styles.container}>
+                <StatusBar style="dark" />
+
+                <SafeAreaView
+                    edges={["top", "bottom"]}
+                    style={styles.searchSafeArea}
+                >
+                    <View style={styles.eventDetailTopRow}>
+                        <Pressable
+                            style={styles.eventDetailBackButton}
+                            onPress={handleCloseEventDetails}
+                        >
+                            <Animated.Text style={styles.eventDetailBackText}>Back</Animated.Text>
+                        </Pressable>
+                        <Animated.Text style={styles.eventDetailHeaderTitle}>Event Details</Animated.Text>
+                        <View style={styles.eventDetailSpacer} />
+                    </View>
+
+                    <EventDetailScreen eventSeriesId={openEventSeriesId} />
                 </SafeAreaView>
             </View>
         );
@@ -432,6 +558,12 @@ export const AppShellScreen = (
                     {renderActiveScreen(
                         activeTabKey,
                         handleOpenSearch,
+                        discoverRefreshKey,
+                        () =>
+                        {
+                            void refreshSavedEventsCount();
+                        },
+                        handleOpenEventDetails,
                         authSession,
                         selectedProfileUserId,
                         isProfileEditing,
@@ -451,6 +583,7 @@ export const AppShellScreen = (
                         tabs={tabs}
                         activeTabKey={activeTabKey}
                         onTabPress={handleTabPress}
+                        badgeCountByTab={{ saved: savedEventsCount }}
                     />
                 </SafeAreaView>
 
@@ -529,6 +662,39 @@ const styles = StyleSheet.create(
     {
         flex: 1,
         backgroundColor: "#f8fafc",
+    },
+    eventDetailTopRow:
+    {
+        minHeight: 46,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        paddingHorizontal: 16,
+        backgroundColor: "#ffffff",
+        borderBottomWidth: 1,
+        borderBottomColor: "#e2e8f0",
+    },
+    eventDetailBackButton:
+    {
+        minWidth: 44,
+        minHeight: 44,
+        justifyContent: "center",
+    },
+    eventDetailBackText:
+    {
+        fontSize: 16,
+        fontWeight: "600",
+        color: "#1d4ed8",
+    },
+    eventDetailHeaderTitle:
+    {
+        fontSize: 17,
+        fontWeight: "700",
+        color: "#0f172a",
+    },
+    eventDetailSpacer:
+    {
+        width: 44,
     },
     mainDismissLayer:
     {
