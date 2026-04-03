@@ -62,6 +62,7 @@ export type EventSeriesDetail = {
     venueLatitude: number;
     venueLongitude: number;
     venuePhoto: string | null;
+    tags: string[];
     averageRating: number | null;
     reviewCount: number;
     reviews: EventSeriesReviewItem[];
@@ -79,6 +80,20 @@ export type CreateEventSeriesRequest = {
     posterURL?: string;
     ageLimit?: number;
     ticketURLBase?: string;
+    tags?: string[];
+};
+
+export type UpdateEventSeriesRequest = {
+    title?: string;
+    description?: string;
+    status?: string;
+    posterURL?: string;
+    ageLimit?: number;
+    ticketURLBase?: string;
+    startTime?: string;
+    durationMinutes?: number;
+    ticketURL?: string;
+    tags?: string[];
 };
 
 export type CreateEventSeriesResponse = {

@@ -141,8 +141,10 @@ export const AppShellScreen = (
     const [selectedProfileUserId, setSelectedProfileUserId] = useState<number | null>(null);
     const [isNewPostOpen, setIsNewPostOpen] = useState(false);
     const [isEventCreationOpen, setIsEventCreationOpen] = useState(false);
+    const [editingEventSeriesId, setEditingEventSeriesId] = useState<number | null>(null);
     const [openEventSeriesId, setOpenEventSeriesId] = useState<number | null>(null);
     const [openVenueId, setOpenVenueId] = useState<number | null>(null);
+    const [openProfileUserId, setOpenProfileUserId] = useState<number | null>(null);
     const [feedRefreshKey, setFeedRefreshKey] = useState(0);
     const [discoverRefreshKey, setDiscoverRefreshKey] = useState(0);
     const [isProfileEditing, setIsProfileEditing] = useState(false);
@@ -272,12 +274,21 @@ export const AppShellScreen = (
     {
         resetSideMenu();
         setIsSearchOpen(false);
+        setEditingEventSeriesId(null);
         setIsEventCreationOpen(true);
     };
 
     const handleCloseEventCreation = (): void =>
     {
         setIsEventCreationOpen(false);
+        setEditingEventSeriesId(null);
+    };
+
+    const handleOpenEventEdit = (eventSeriesId: number): void =>
+    {
+        setOpenEventSeriesId(null);
+        setEditingEventSeriesId(eventSeriesId);
+        setIsEventCreationOpen(true);
     };
 
     const handleOpenEventDetails = (eventSeriesId: number): void =>
@@ -291,6 +302,12 @@ export const AppShellScreen = (
         setOpenEventSeriesId(null);
     };
 
+    const handleEventDeleted = (): void =>
+    {
+        setOpenEventSeriesId(null);
+        setDiscoverRefreshKey((k) => k + 1);
+    };
+
     const handleOpenVenueDetails = (venueId: number): void =>
     {
         setIsSearchOpen(false);
@@ -300,6 +317,11 @@ export const AppShellScreen = (
     const handleCloseVenueDetails = (): void =>
     {
         setOpenVenueId(null);
+    };
+
+    const handleCloseProfileDetails = (): void =>
+    {
+        setOpenProfileUserId(null);
     };
 
     const handlePostCreated = (): void =>
@@ -369,10 +391,17 @@ export const AppShellScreen = (
 
     const handleOpenProfile = (profileUserId: number): void =>
     {
-        setSelectedProfileUserId(profileUserId);
-        setIsProfileEditing(false);
-        setActiveTabKey("profile");
-        setIsSearchOpen(false);
+        if (profileUserId === authSession.user.id)
+        {
+            setSelectedProfileUserId(null);
+            setIsProfileEditing(false);
+            setActiveTabKey("profile");
+            setIsSearchOpen(false);
+            setOpenProfileUserId(null);
+            return;
+        }
+
+        setOpenProfileUserId(profileUserId);
     };
 
     const isViewingOtherProfile = selectedProfileUserId !== null && selectedProfileUserId !== authSession.user.id;
@@ -430,6 +459,7 @@ export const AppShellScreen = (
                         authSession={authSession}
                         onClose={handleCloseEventCreation}
                         onEventCreated={handleEventCreated}
+                        eventSeriesId={editingEventSeriesId}
                     />
                 </SafeAreaView>
             </View>
@@ -485,8 +515,46 @@ export const AppShellScreen = (
                     </View>
 
                     <EventDetailScreen
+                        authSession={authSession}
                         eventSeriesId={openEventSeriesId}
                         onOpenVenuePress={handleOpenVenueDetails}
+                        onEditPress={handleOpenEventEdit}
+                        onEventDeleted={handleEventDeleted}
+                    />
+                </SafeAreaView>
+            </View>
+        );
+    }
+
+    if (openProfileUserId !== null)
+    {
+        return (
+            <View style={styles.container}>
+                <StatusBar style="dark" />
+
+                <SafeAreaView
+                    edges={["top", "bottom"]}
+                    style={styles.searchSafeArea}
+                >
+                    <View style={styles.eventDetailTopRow}>
+                        <Pressable
+                            style={styles.eventDetailBackButton}
+                            onPress={handleCloseProfileDetails}
+                        >
+                            <Animated.Text style={styles.eventDetailBackText}>Back</Animated.Text>
+                        </Pressable>
+                        <Animated.Text style={styles.eventDetailHeaderTitle}>Profile</Animated.Text>
+                        <View style={styles.eventDetailSpacer} />
+                    </View>
+
+                    <ProfileScreen
+                        authSession={authSession}
+                        profileUserId={openProfileUserId}
+                        isEditing={false}
+                        onOpenProfilePress={handleOpenProfile}
+                        onStartEditing={handleStartProfileEditing}
+                        onStopEditing={handleStopProfileEditing}
+                        onSessionUpdate={onSessionUpdate}
                     />
                 </SafeAreaView>
             </View>

@@ -11,7 +11,9 @@ import {
     View,
 } from "react-native";
 import {
+    AuthSession,
     createSeriesReview,
+    deleteEventSeries,
     EventOccurrenceDetail,
     EventSeriesReviewItem,
     EventSeriesDetail,
@@ -20,8 +22,11 @@ import {
 } from "../Services";
 
 type EventDetailScreenProps = {
+    authSession: AuthSession;
     eventSeriesId: number;
     onOpenVenuePress?: (venueId: number) => void;
+    onEditPress?: (eventSeriesId: number) => void;
+    onEventDeleted?: () => void;
 };
 
 const formatDateTime = (isoString: string): string =>
@@ -66,7 +71,10 @@ const getStars = (rating: number): string =>
 export const EventDetailScreen = (
     {
         eventSeriesId,
+        authSession,
         onOpenVenuePress,
+        onEditPress,
+        onEventDeleted,
     }: EventDetailScreenProps,
 ) =>
 {
@@ -77,6 +85,7 @@ export const EventDetailScreen = (
     const [reviewRating, setReviewRating] = useState(5);
     const [reviewText, setReviewText] = useState("");
     const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+    const [isDeletingEvent, setIsDeletingEvent] = useState(false);
 
     const loadDetail = useCallback(
         async (isRefresh = false): Promise<void> =>
@@ -193,6 +202,65 @@ export const EventDetailScreen = (
         }
     };
 
+    const canManageEvent = useMemo(
+        () =>
+        {
+            if (!eventDetail)
+            {
+                return false;
+            }
+
+            return (
+                authSession.user.type === "venueAdmin"
+                && authSession.user.username !== null
+                && eventDetail.createdByUsername === authSession.user.username
+            );
+        },
+        [authSession.user.type, authSession.user.username, eventDetail],
+    );
+
+    const handleDeleteEvent = (): void =>
+    {
+        if (!canManageEvent || isDeletingEvent)
+        {
+            return;
+        }
+
+        Alert.alert(
+            "Delete event",
+            "Are you sure you want to delete this event? This cannot be undone.",
+            [
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "Delete",
+                    style: "destructive",
+                    onPress: () =>
+                    {
+                        void (async () =>
+                        {
+                            setIsDeletingEvent(true);
+
+                            try
+                            {
+                                await deleteEventSeries(eventSeriesId);
+                                Alert.alert("Deleted", "Event deleted successfully.");
+                                onEventDeleted?.();
+                            }
+                            catch (caughtError)
+                            {
+                                Alert.alert("Delete failed", getErrorMessageFromUnknown(caughtError));
+                            }
+                            finally
+                            {
+                                setIsDeletingEvent(false);
+                            }
+                        })();
+                    },
+                },
+            ],
+        );
+    };
+
     if (isLoading)
     {
         return (
@@ -243,6 +311,26 @@ export const EventDetailScreen = (
                     <Text style={styles.metaText}>Age limit: {eventDetail.ageLimit}+</Text>
                 ) : null}
                 <Text style={styles.description}>{eventDetail.description}</Text>
+
+                {canManageEvent ? (
+                    <View style={styles.manageActionsRow}>
+                        <Pressable
+                            style={styles.manageEditButton}
+                            onPress={() => onEditPress?.(eventSeriesId)}
+                        >
+                            <Text style={styles.manageButtonText}>Edit Event</Text>
+                        </Pressable>
+                        <Pressable
+                            style={styles.manageDeleteButton}
+                            disabled={isDeletingEvent}
+                            onPress={handleDeleteEvent}
+                        >
+                            <Text style={styles.manageDeleteButtonText}>
+                                {isDeletingEvent ? "Deleting..." : "Delete Event"}
+                            </Text>
+                        </Pressable>
+                    </View>
+                ) : null}
             </View>
 
             <View style={styles.card}>
@@ -404,6 +492,35 @@ const styles = StyleSheet.create({
         lineHeight: 20,
         color: "#334155",
         marginTop: 8,
+    },
+    manageActionsRow: {
+        flexDirection: "row",
+        gap: 8,
+        marginTop: 10,
+    },
+    manageEditButton: {
+        alignSelf: "flex-start",
+        borderRadius: 8,
+        backgroundColor: "#1d4ed8",
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+    },
+    manageDeleteButton: {
+        alignSelf: "flex-start",
+        borderRadius: 8,
+        backgroundColor: "#dc2626",
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+    },
+    manageButtonText: {
+        color: "#ffffff",
+        fontWeight: "700",
+        fontSize: 13,
+    },
+    manageDeleteButtonText: {
+        color: "#ffffff",
+        fontWeight: "700",
+        fontSize: 13,
     },
     bodyText: {
         fontSize: 14,
