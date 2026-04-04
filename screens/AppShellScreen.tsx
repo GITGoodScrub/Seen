@@ -2,7 +2,7 @@ import { StatusBar } from "expo-status-bar";
 import { useMemo, useRef, useState } from "react";
 import { Animated, Easing, Pressable, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { AppHeader, BottomTabBar, SideMenuDrawer } from "../components";
+import { AppHeader, BottomTabBar, SideMenuDrawer, SwipeBackGestureView } from "../components";
 import { higLayout } from "../constants";
 import {
     AuthSession,
@@ -293,7 +293,6 @@ export const AppShellScreen = (
 
     const handleOpenEventDetails = (eventSeriesId: number): void =>
     {
-        setIsSearchOpen(false);
         setOpenEventSeriesId(eventSeriesId);
     };
 
@@ -310,7 +309,6 @@ export const AppShellScreen = (
 
     const handleOpenVenueDetails = (venueId: number): void =>
     {
-        setIsSearchOpen(false);
         setOpenVenueId(venueId);
     };
 
@@ -425,165 +423,158 @@ export const AppShellScreen = (
         },
     );
 
-    if (isNewPostOpen)
+    const overlayContent = (() =>
     {
-        return (
-            <View style={styles.container}>
-                <StatusBar style="dark" />
+        if (isNewPostOpen)
+        {
+            return (
+                <SwipeBackGestureView onBack={handleCloseNewPost}>
+                    <SafeAreaView
+                        edges={["top", "bottom"]}
+                        style={styles.composeSafeArea}
+                    >
+                        <NewPostScreen
+                            authSession={authSession}
+                            onClose={handleCloseNewPost}
+                            onPostCreated={handlePostCreated}
+                        />
+                    </SafeAreaView>
+                </SwipeBackGestureView>
+            );
+        }
 
-                <SafeAreaView
-                    edges={["top", "bottom"]}
-                    style={styles.composeSafeArea}
-                >
-                    <NewPostScreen
-                        authSession={authSession}
-                        onClose={handleCloseNewPost}
-                        onPostCreated={handlePostCreated}
-                    />
-                </SafeAreaView>
-            </View>
-        );
-    }
+        if (isEventCreationOpen)
+        {
+            return (
+                <SwipeBackGestureView onBack={handleCloseEventCreation}>
+                    <SafeAreaView
+                        edges={["top", "bottom"]}
+                        style={styles.composeSafeArea}
+                    >
+                        <EventCreationScreen
+                            authSession={authSession}
+                            onClose={handleCloseEventCreation}
+                            onEventCreated={handleEventCreated}
+                            eventSeriesId={editingEventSeriesId}
+                        />
+                    </SafeAreaView>
+                </SwipeBackGestureView>
+            );
+        }
 
-    if (isEventCreationOpen)
-    {
-        return (
-            <View style={styles.container}>
-                <StatusBar style="dark" />
+        if (openVenueId !== null)
+        {
+            return (
+                <SwipeBackGestureView onBack={handleCloseVenueDetails}>
+                    <SafeAreaView
+                        edges={["top", "bottom"]}
+                        style={styles.searchSafeArea}
+                    >
+                        <View style={styles.eventDetailTopRow}>
+                            <Pressable
+                                style={styles.eventDetailBackButton}
+                                onPress={handleCloseVenueDetails}
+                            >
+                                <Animated.Text style={styles.eventDetailBackText}>Back</Animated.Text>
+                            </Pressable>
+                            <Animated.Text style={styles.eventDetailHeaderTitle}>Venue Details</Animated.Text>
+                            <View style={styles.eventDetailSpacer} />
+                        </View>
 
-                <SafeAreaView
-                    edges={["top", "bottom"]}
-                    style={styles.composeSafeArea}
-                >
-                    <EventCreationScreen
-                        authSession={authSession}
-                        onClose={handleCloseEventCreation}
-                        onEventCreated={handleEventCreated}
-                        eventSeriesId={editingEventSeriesId}
-                    />
-                </SafeAreaView>
-            </View>
-        );
-    }
+                        <VenueDetailScreen venueId={openVenueId} />
+                    </SafeAreaView>
+                </SwipeBackGestureView>
+            );
+        }
 
-    if (openVenueId !== null)
-    {
-        return (
-            <View style={styles.container}>
-                <StatusBar style="dark" />
+        if (openEventSeriesId !== null)
+        {
+            return (
+                <SwipeBackGestureView onBack={handleCloseEventDetails}>
+                    <SafeAreaView
+                        edges={["top", "bottom"]}
+                        style={styles.searchSafeArea}
+                    >
+                        <View style={styles.eventDetailTopRow}>
+                            <Pressable
+                                style={styles.eventDetailBackButton}
+                                onPress={handleCloseEventDetails}
+                            >
+                                <Animated.Text style={styles.eventDetailBackText}>Back</Animated.Text>
+                            </Pressable>
+                            <Animated.Text style={styles.eventDetailHeaderTitle}>Event Details</Animated.Text>
+                            <View style={styles.eventDetailSpacer} />
+                        </View>
 
-                <SafeAreaView
-                    edges={["top", "bottom"]}
-                    style={styles.searchSafeArea}
-                >
-                    <View style={styles.eventDetailTopRow}>
-                        <Pressable
-                            style={styles.eventDetailBackButton}
-                            onPress={handleCloseVenueDetails}
-                        >
-                            <Animated.Text style={styles.eventDetailBackText}>Back</Animated.Text>
-                        </Pressable>
-                        <Animated.Text style={styles.eventDetailHeaderTitle}>Venue Details</Animated.Text>
-                        <View style={styles.eventDetailSpacer} />
-                    </View>
+                        <EventDetailScreen
+                            authSession={authSession}
+                            eventSeriesId={openEventSeriesId}
+                            onOpenVenuePress={handleOpenVenueDetails}
+                            onEditPress={handleOpenEventEdit}
+                            onEventDeleted={handleEventDeleted}
+                        />
+                    </SafeAreaView>
+                </SwipeBackGestureView>
+            );
+        }
 
-                    <VenueDetailScreen venueId={openVenueId} />
-                </SafeAreaView>
-            </View>
-        );
-    }
+        if (openProfileUserId !== null)
+        {
+            return (
+                <SwipeBackGestureView onBack={handleCloseProfileDetails}>
+                    <SafeAreaView
+                        edges={["top", "bottom"]}
+                        style={styles.searchSafeArea}
+                    >
+                        <View style={styles.eventDetailTopRow}>
+                            <Pressable
+                                style={styles.eventDetailBackButton}
+                                onPress={handleCloseProfileDetails}
+                            >
+                                <Animated.Text style={styles.eventDetailBackText}>Back</Animated.Text>
+                            </Pressable>
+                            <Animated.Text style={styles.eventDetailHeaderTitle}>Profile</Animated.Text>
+                            <View style={styles.eventDetailSpacer} />
+                        </View>
 
-    if (openEventSeriesId !== null)
-    {
-        return (
-            <View style={styles.container}>
-                <StatusBar style="dark" />
+                        <ProfileScreen
+                            authSession={authSession}
+                            profileUserId={openProfileUserId}
+                            isEditing={false}
+                            onOpenProfilePress={handleOpenProfile}
+                            onStartEditing={handleStartProfileEditing}
+                            onStopEditing={handleStopProfileEditing}
+                            onSessionUpdate={onSessionUpdate}
+                        />
+                    </SafeAreaView>
+                </SwipeBackGestureView>
+            );
+        }
 
-                <SafeAreaView
-                    edges={["top", "bottom"]}
-                    style={styles.searchSafeArea}
-                >
-                    <View style={styles.eventDetailTopRow}>
-                        <Pressable
-                            style={styles.eventDetailBackButton}
-                            onPress={handleCloseEventDetails}
-                        >
-                            <Animated.Text style={styles.eventDetailBackText}>Back</Animated.Text>
-                        </Pressable>
-                        <Animated.Text style={styles.eventDetailHeaderTitle}>Event Details</Animated.Text>
-                        <View style={styles.eventDetailSpacer} />
-                    </View>
+        if (isSearchOpen)
+        {
+            return (
+                <SwipeBackGestureView onBack={handleCloseSearch}>
+                    <SafeAreaView
+                        edges={["top", "bottom"]}
+                        style={styles.searchSafeArea}
+                    >
+                        <SearchScreen
+                            recentSearches={recentSearches}
+                            onClose={handleCloseSearch}
+                            onSearchSubmit={handleSearchSubmit}
+                            onOpenProfilePress={handleOpenProfile}
+                            onOpenVenuePress={handleOpenVenueDetails}
+                            onOpenEventPress={handleOpenEventDetails}
+                            onClearRecentSearches={handleClearRecentSearches}
+                        />
+                    </SafeAreaView>
+                </SwipeBackGestureView>
+            );
+        }
 
-                    <EventDetailScreen
-                        authSession={authSession}
-                        eventSeriesId={openEventSeriesId}
-                        onOpenVenuePress={handleOpenVenueDetails}
-                        onEditPress={handleOpenEventEdit}
-                        onEventDeleted={handleEventDeleted}
-                    />
-                </SafeAreaView>
-            </View>
-        );
-    }
-
-    if (openProfileUserId !== null)
-    {
-        return (
-            <View style={styles.container}>
-                <StatusBar style="dark" />
-
-                <SafeAreaView
-                    edges={["top", "bottom"]}
-                    style={styles.searchSafeArea}
-                >
-                    <View style={styles.eventDetailTopRow}>
-                        <Pressable
-                            style={styles.eventDetailBackButton}
-                            onPress={handleCloseProfileDetails}
-                        >
-                            <Animated.Text style={styles.eventDetailBackText}>Back</Animated.Text>
-                        </Pressable>
-                        <Animated.Text style={styles.eventDetailHeaderTitle}>Profile</Animated.Text>
-                        <View style={styles.eventDetailSpacer} />
-                    </View>
-
-                    <ProfileScreen
-                        authSession={authSession}
-                        profileUserId={openProfileUserId}
-                        isEditing={false}
-                        onOpenProfilePress={handleOpenProfile}
-                        onStartEditing={handleStartProfileEditing}
-                        onStopEditing={handleStopProfileEditing}
-                        onSessionUpdate={onSessionUpdate}
-                    />
-                </SafeAreaView>
-            </View>
-        );
-    }
-
-    if (isSearchOpen)
-    {
-        return (
-            <View style={styles.container}>
-                <StatusBar style="dark" />
-
-                <SafeAreaView
-                    edges={["top", "bottom"]}
-                    style={styles.searchSafeArea}
-                >
-                    <SearchScreen
-                        recentSearches={recentSearches}
-                        onClose={handleCloseSearch}
-                        onSearchSubmit={handleSearchSubmit}
-                        onOpenProfilePress={handleOpenProfile}
-                        onOpenVenuePress={handleOpenVenueDetails}
-                        onOpenEventPress={handleOpenEventDetails}
-                        onClearRecentSearches={handleClearRecentSearches}
-                    />
-                </SafeAreaView>
-            </View>
-        );
-    }
+        return null;
+    })();
 
     return (
         <View style={styles.container}>
@@ -683,6 +674,12 @@ export const AppShellScreen = (
                     </Pressable>
                 ) : null}
             </Animated.View>
+
+            {overlayContent ? (
+                <View style={styles.overlayLayer}>
+                    {overlayContent}
+                </View>
+            ) : null}
         </View>
     );
 };
@@ -784,5 +781,12 @@ const styles = StyleSheet.create(
     {
         flex: 1,
         backgroundColor: "#0f172a",
+    },
+    overlayLayer:
+    {
+        ...StyleSheet.absoluteFillObject,
+        zIndex: 20,
+        elevation: 20,
+        backgroundColor: "transparent",
     },
 });
