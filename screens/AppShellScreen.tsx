@@ -2,7 +2,7 @@ import { StatusBar } from "expo-status-bar";
 import { useMemo, useRef, useState } from "react";
 import { Animated, Easing, Pressable, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { AppHeader, BottomTabBar, SideMenuDrawer } from "../components";
+import { AppHeader, BottomTabBar, SideMenuDrawer, SwipeBackGestureView } from "../components";
 import { higLayout } from "../constants";
 import {
     AuthSession,
@@ -15,12 +15,15 @@ import {
     getSideMenuItems,
 } from "../Services";
 import { DiscoverScreen } from "./DiscoverScreen";
+import { EventCreationScreen } from "./EventCreationScreen";
+import { EventDetailScreen } from "./EventDetailScreen";
 import { HomeScreen } from "./HomeScreen";
 import { NewPostScreen } from "./NewPostScreen";
 import { NotificationsScreen } from "./NotificationsScreen";
 import { ProfileScreen } from "./ProfileScreen";
 import { SavedEventsScreen } from "./SavedEventsScreen";
 import { SearchScreen } from "./SearchScreen";
+import { VenueDetailScreen } from "./VenueDetailScreen";
 
 type AppShellScreenProps = {
     authSession: AuthSession;
@@ -44,6 +47,8 @@ const isAppTabKey = (value: string): value is AppTabKey =>
 const renderActiveScreen = (
     activeTabKey: AppTabKey,
     onSearchPress: () => void,
+    discoverRefreshKey: number,
+    onOpenEventPress: (eventId: number) => void,
     authSession: AuthSession,
     selectedProfileUserId: number | null,
     isProfileEditing: boolean,
@@ -67,12 +72,22 @@ const renderActiveScreen = (
 
     if (activeTabKey === "discover")
     {
-        return <DiscoverScreen onSearchPress={onSearchPress} />;
+        return (
+            <DiscoverScreen
+                onSearchPress={onSearchPress}
+                refreshKey={discoverRefreshKey}
+                onEventPress={onOpenEventPress}
+            />
+        );
     }
 
     if (activeTabKey === "saved")
     {
-        return <SavedEventsScreen />;
+        return (
+            <SavedEventsScreen
+                onEventPress={onOpenEventPress}
+            />
+        );
     }
 
     if (activeTabKey === "notifications")
@@ -125,7 +140,13 @@ export const AppShellScreen = (
     );
     const [selectedProfileUserId, setSelectedProfileUserId] = useState<number | null>(null);
     const [isNewPostOpen, setIsNewPostOpen] = useState(false);
+    const [isEventCreationOpen, setIsEventCreationOpen] = useState(false);
+    const [editingEventSeriesId, setEditingEventSeriesId] = useState<number | null>(null);
+    const [openEventSeriesId, setOpenEventSeriesId] = useState<number | null>(null);
+    const [openVenueId, setOpenVenueId] = useState<number | null>(null);
+    const [openProfileUserId, setOpenProfileUserId] = useState<number | null>(null);
     const [feedRefreshKey, setFeedRefreshKey] = useState(0);
+    const [discoverRefreshKey, setDiscoverRefreshKey] = useState(0);
     const [isProfileEditing, setIsProfileEditing] = useState(false);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [isSideMenuVisible, setIsSideMenuVisible] = useState(false);
@@ -249,9 +270,66 @@ export const AppShellScreen = (
         setIsNewPostOpen(false);
     };
 
+    const handleOpenEventCreation = (): void =>
+    {
+        resetSideMenu();
+        setIsSearchOpen(false);
+        setEditingEventSeriesId(null);
+        setIsEventCreationOpen(true);
+    };
+
+    const handleCloseEventCreation = (): void =>
+    {
+        setIsEventCreationOpen(false);
+        setEditingEventSeriesId(null);
+    };
+
+    const handleOpenEventEdit = (eventSeriesId: number): void =>
+    {
+        setOpenEventSeriesId(null);
+        setEditingEventSeriesId(eventSeriesId);
+        setIsEventCreationOpen(true);
+    };
+
+    const handleOpenEventDetails = (eventSeriesId: number): void =>
+    {
+        setOpenEventSeriesId(eventSeriesId);
+    };
+
+    const handleCloseEventDetails = (): void =>
+    {
+        setOpenEventSeriesId(null);
+    };
+
+    const handleEventDeleted = (): void =>
+    {
+        setOpenEventSeriesId(null);
+        setDiscoverRefreshKey((k) => k + 1);
+    };
+
+    const handleOpenVenueDetails = (venueId: number): void =>
+    {
+        setOpenVenueId(venueId);
+    };
+
+    const handleCloseVenueDetails = (): void =>
+    {
+        setOpenVenueId(null);
+    };
+
+    const handleCloseProfileDetails = (): void =>
+    {
+        setOpenProfileUserId(null);
+    };
+
     const handlePostCreated = (): void =>
     {
         setFeedRefreshKey((k) => k + 1);
+    };
+
+    const handleEventCreated = (): void =>
+    {
+        setDiscoverRefreshKey((k) => k + 1);
     };
 
     const handleOpenSearch = (): void =>
@@ -288,6 +366,12 @@ export const AppShellScreen = (
             return;
         }
 
+        if (activeTabKey === "discover")
+        {
+            handleOpenEventCreation();
+            return;
+        }
+
         handleOpenNewPost();
     };
 
@@ -305,10 +389,17 @@ export const AppShellScreen = (
 
     const handleOpenProfile = (profileUserId: number): void =>
     {
-        setSelectedProfileUserId(profileUserId);
-        setIsProfileEditing(false);
-        setActiveTabKey("profile");
-        setIsSearchOpen(false);
+        if (profileUserId === authSession.user.id)
+        {
+            setSelectedProfileUserId(null);
+            setIsProfileEditing(false);
+            setActiveTabKey("profile");
+            setIsSearchOpen(false);
+            setOpenProfileUserId(null);
+            return;
+        }
+
+        setOpenProfileUserId(profileUserId);
     };
 
     const isViewingOtherProfile = selectedProfileUserId !== null && selectedProfileUserId !== authSession.user.id;
@@ -332,47 +423,158 @@ export const AppShellScreen = (
         },
     );
 
-    if (isNewPostOpen)
+    const overlayContent = (() =>
     {
-        return (
-            <View style={styles.container}>
-                <StatusBar style="dark" />
+        if (isNewPostOpen)
+        {
+            return (
+                <SwipeBackGestureView onBack={handleCloseNewPost}>
+                    <SafeAreaView
+                        edges={["top", "bottom"]}
+                        style={styles.composeSafeArea}
+                    >
+                        <NewPostScreen
+                            authSession={authSession}
+                            onClose={handleCloseNewPost}
+                            onPostCreated={handlePostCreated}
+                        />
+                    </SafeAreaView>
+                </SwipeBackGestureView>
+            );
+        }
 
-                <SafeAreaView
-                    edges={["top", "bottom"]}
-                    style={styles.composeSafeArea}
-                >
-                    <NewPostScreen
-                        authSession={authSession}
-                        onClose={handleCloseNewPost}
-                        onPostCreated={handlePostCreated}
-                    />
-                </SafeAreaView>
-            </View>
-        );
-    }
+        if (isEventCreationOpen)
+        {
+            return (
+                <SwipeBackGestureView onBack={handleCloseEventCreation}>
+                    <SafeAreaView
+                        edges={["top", "bottom"]}
+                        style={styles.composeSafeArea}
+                    >
+                        <EventCreationScreen
+                            authSession={authSession}
+                            onClose={handleCloseEventCreation}
+                            onEventCreated={handleEventCreated}
+                            eventSeriesId={editingEventSeriesId}
+                        />
+                    </SafeAreaView>
+                </SwipeBackGestureView>
+            );
+        }
 
-    if (isSearchOpen)
-    {
-        return (
-            <View style={styles.container}>
-                <StatusBar style="dark" />
+        if (openVenueId !== null)
+        {
+            return (
+                <SwipeBackGestureView onBack={handleCloseVenueDetails}>
+                    <SafeAreaView
+                        edges={["top", "bottom"]}
+                        style={styles.searchSafeArea}
+                    >
+                        <View style={styles.eventDetailTopRow}>
+                            <Pressable
+                                style={styles.eventDetailBackButton}
+                                onPress={handleCloseVenueDetails}
+                            >
+                                <Animated.Text style={styles.eventDetailBackText}>Back</Animated.Text>
+                            </Pressable>
+                            <Animated.Text style={styles.eventDetailHeaderTitle}>Venue Details</Animated.Text>
+                            <View style={styles.eventDetailSpacer} />
+                        </View>
 
-                <SafeAreaView
-                    edges={["top", "bottom"]}
-                    style={styles.searchSafeArea}
-                >
-                    <SearchScreen
-                        recentSearches={recentSearches}
-                        onClose={handleCloseSearch}
-                        onSearchSubmit={handleSearchSubmit}
-                        onOpenProfilePress={handleOpenProfile}
-                        onClearRecentSearches={handleClearRecentSearches}
-                    />
-                </SafeAreaView>
-            </View>
-        );
-    }
+                        <VenueDetailScreen venueId={openVenueId} />
+                    </SafeAreaView>
+                </SwipeBackGestureView>
+            );
+        }
+
+        if (openEventSeriesId !== null)
+        {
+            return (
+                <SwipeBackGestureView onBack={handleCloseEventDetails}>
+                    <SafeAreaView
+                        edges={["top", "bottom"]}
+                        style={styles.searchSafeArea}
+                    >
+                        <View style={styles.eventDetailTopRow}>
+                            <Pressable
+                                style={styles.eventDetailBackButton}
+                                onPress={handleCloseEventDetails}
+                            >
+                                <Animated.Text style={styles.eventDetailBackText}>Back</Animated.Text>
+                            </Pressable>
+                            <Animated.Text style={styles.eventDetailHeaderTitle}>Event Details</Animated.Text>
+                            <View style={styles.eventDetailSpacer} />
+                        </View>
+
+                        <EventDetailScreen
+                            authSession={authSession}
+                            eventSeriesId={openEventSeriesId}
+                            onOpenVenuePress={handleOpenVenueDetails}
+                            onEditPress={handleOpenEventEdit}
+                            onEventDeleted={handleEventDeleted}
+                        />
+                    </SafeAreaView>
+                </SwipeBackGestureView>
+            );
+        }
+
+        if (openProfileUserId !== null)
+        {
+            return (
+                <SwipeBackGestureView onBack={handleCloseProfileDetails}>
+                    <SafeAreaView
+                        edges={["top", "bottom"]}
+                        style={styles.searchSafeArea}
+                    >
+                        <View style={styles.eventDetailTopRow}>
+                            <Pressable
+                                style={styles.eventDetailBackButton}
+                                onPress={handleCloseProfileDetails}
+                            >
+                                <Animated.Text style={styles.eventDetailBackText}>Back</Animated.Text>
+                            </Pressable>
+                            <Animated.Text style={styles.eventDetailHeaderTitle}>Profile</Animated.Text>
+                            <View style={styles.eventDetailSpacer} />
+                        </View>
+
+                        <ProfileScreen
+                            authSession={authSession}
+                            profileUserId={openProfileUserId}
+                            isEditing={false}
+                            onOpenProfilePress={handleOpenProfile}
+                            onStartEditing={handleStartProfileEditing}
+                            onStopEditing={handleStopProfileEditing}
+                            onSessionUpdate={onSessionUpdate}
+                        />
+                    </SafeAreaView>
+                </SwipeBackGestureView>
+            );
+        }
+
+        if (isSearchOpen)
+        {
+            return (
+                <SwipeBackGestureView onBack={handleCloseSearch}>
+                    <SafeAreaView
+                        edges={["top", "bottom"]}
+                        style={styles.searchSafeArea}
+                    >
+                        <SearchScreen
+                            recentSearches={recentSearches}
+                            onClose={handleCloseSearch}
+                            onSearchSubmit={handleSearchSubmit}
+                            onOpenProfilePress={handleOpenProfile}
+                            onOpenVenuePress={handleOpenVenueDetails}
+                            onOpenEventPress={handleOpenEventDetails}
+                            onClearRecentSearches={handleClearRecentSearches}
+                        />
+                    </SafeAreaView>
+                </SwipeBackGestureView>
+            );
+        }
+
+        return null;
+    })();
 
     return (
         <View style={styles.container}>
@@ -432,6 +634,8 @@ export const AppShellScreen = (
                     {renderActiveScreen(
                         activeTabKey,
                         handleOpenSearch,
+                        discoverRefreshKey,
+                        handleOpenEventDetails,
                         authSession,
                         selectedProfileUserId,
                         isProfileEditing,
@@ -470,6 +674,12 @@ export const AppShellScreen = (
                     </Pressable>
                 ) : null}
             </Animated.View>
+
+            {overlayContent ? (
+                <View style={styles.overlayLayer}>
+                    {overlayContent}
+                </View>
+            ) : null}
         </View>
     );
 };
@@ -530,6 +740,39 @@ const styles = StyleSheet.create(
         flex: 1,
         backgroundColor: "#f8fafc",
     },
+    eventDetailTopRow:
+    {
+        minHeight: 46,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        paddingHorizontal: 16,
+        backgroundColor: "#ffffff",
+        borderBottomWidth: 1,
+        borderBottomColor: "#e2e8f0",
+    },
+    eventDetailBackButton:
+    {
+        minWidth: 44,
+        minHeight: 44,
+        justifyContent: "center",
+    },
+    eventDetailBackText:
+    {
+        fontSize: 16,
+        fontWeight: "600",
+        color: "#1d4ed8",
+    },
+    eventDetailHeaderTitle:
+    {
+        fontSize: 17,
+        fontWeight: "700",
+        color: "#0f172a",
+    },
+    eventDetailSpacer:
+    {
+        width: 44,
+    },
     mainDismissLayer:
     {
         ...StyleSheet.absoluteFillObject,
@@ -538,5 +781,12 @@ const styles = StyleSheet.create(
     {
         flex: 1,
         backgroundColor: "#0f172a",
+    },
+    overlayLayer:
+    {
+        ...StyleSheet.absoluteFillObject,
+        zIndex: 20,
+        elevation: 20,
+        backgroundColor: "transparent",
     },
 });

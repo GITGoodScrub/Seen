@@ -4,7 +4,7 @@ export type SearchSuggestion = {
     subtitle: string;
 };
 
-export type SearchResultType = "user" | "venue" | "post";
+export type SearchResultType = "user" | "venue" | "event";
 
 export type SearchResult = {
     id: string;

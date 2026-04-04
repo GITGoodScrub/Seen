@@ -27,7 +27,7 @@ const isSearchResult = (value: unknown): value is SearchResult =>
 
     return (
         typeof candidate.id === "string"
-        && (candidate.type === "user" || candidate.type === "venue" || candidate.type === "post")
+        && (candidate.type === "user" || candidate.type === "venue" || candidate.type === "event")
         && typeof candidate.title === "string"
         && typeof candidate.subtitle === "string"
         && (candidate.isVerified === undefined || typeof candidate.isVerified === "boolean")
