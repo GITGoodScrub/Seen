@@ -10,8 +10,13 @@ const isTagItem = (value: unknown): value is TagItem =>
         return false;
     }
 
-    const candidate = value as { name?: unknown };
-    return typeof candidate.name === "string" && candidate.name.trim().length > 0;
+    const candidate = value as { tagId?: unknown; name?: unknown; tagType?: unknown };
+    return (
+        typeof candidate.tagId === "number"
+        && typeof candidate.name === "string"
+        && candidate.name.trim().length > 0
+        && (candidate.tagType === null || typeof candidate.tagType === "string")
+    );
 };
 
 export const loadTags = async (): Promise<TagItem[]> =>

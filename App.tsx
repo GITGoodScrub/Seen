@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
-import { AppShellScreen, AuthScreen } from "./screens";
+import { AppShellScreen, AuthScreen, InterestsOnboardingScreen } from "./screens";
 import {
     AuthSession,
+    InterestSetup,
     getErrorMessageFromUnknown,
+    loadInterestSetup,
     logoutFromSeen,
     observeFirebaseAuthState,
     syncSessionWithBackend,
@@ -12,6 +14,7 @@ import {
 import { User } from "firebase/auth";
 
 type AuthViewState = "loading" | "signed-out" | "signed-in";
+type InterestsGateState = "idle" | "loading" | "required" | "done";
 
 const isDevAuthBypassEnabled = process.env.EXPO_PUBLIC_DEV_AUTH_BYPASS === "true";
 
@@ -42,6 +45,8 @@ export default function App()
     const [authViewState, setAuthViewState] = useState<AuthViewState>("loading");
     const [authSession, setAuthSession] = useState<AuthSession | null>(null);
     const [authErrorMessage, setAuthErrorMessage] = useState<string | null>(null);
+    const [interestsGateState, setInterestsGateState] = useState<InterestsGateState>("idle");
+    const [interestSetup, setInterestSetup] = useState<InterestSetup | null>(null);
 
     const handleAuthSuccess = useCallback(
         (nextSession: AuthSession): void =>
@@ -130,6 +135,61 @@ export default function App()
         [],
     );
 
+    useEffect(
+        () =>
+        {
+            if (authViewState !== "signed-in" || !authSession)
+            {
+                setInterestsGateState("idle");
+                setInterestSetup(null);
+                return;
+            }
+
+            let isCancelled = false;
+            setInterestsGateState("loading");
+
+            loadInterestSetup()
+                .then(
+                    (setup) =>
+                    {
+                        if (isCancelled)
+                        {
+                            return;
+                        }
+
+                        if (setup.shouldShowOnboarding)
+                        {
+                            setInterestSetup(setup);
+                            setInterestsGateState("required");
+                            return;
+                        }
+
+                        setInterestSetup(null);
+                        setInterestsGateState("done");
+                    },
+                )
+                .catch(
+                    () =>
+                    {
+                        if (isCancelled)
+                        {
+                            return;
+                        }
+
+                        // Do not block app usage if onboarding pre-check fails.
+                        setInterestSetup(null);
+                        setInterestsGateState("done");
+                    },
+                );
+
+            return () =>
+            {
+                isCancelled = true;
+            };
+        },
+        [authSession, authViewState],
+    );
+
     return (
         <SafeAreaProvider>
             {authViewState === "loading" ? (
@@ -149,11 +209,34 @@ export default function App()
             ) : null}
 
             {authViewState === "signed-in" && authSession ? (
+                interestsGateState === "required" && interestSetup ? (
+                    <InterestsOnboardingScreen
+                        setup={interestSetup}
+                        onComplete={() =>
+                        {
+                            setInterestsGateState("done");
+                            setInterestSetup(null);
+                        }}
+                        onSkipComplete={() =>
+                        {
+                            setInterestsGateState("done");
+                            setInterestSetup(null);
+                        }}
+                    />
+                ) : interestsGateState === "loading" ? (
+                    <SafeAreaView style={styles.loadingSafeArea} edges={["top", "bottom"]}>
+                        <View style={styles.loadingContent}>
+                            <ActivityIndicator size="large" />
+                            <Text style={styles.loadingLabel}>Preparing your recommendations...</Text>
+                        </View>
+                    </SafeAreaView>
+                ) : (
                 <AppShellScreen
                     authSession={authSession}
                     onSessionUpdate={handleSessionUpdate}
                     onLogout={handleLogout}
                 />
+                )
             ) : null}
         </SafeAreaProvider>
     );

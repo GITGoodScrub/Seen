@@ -11,3 +11,4 @@ export * from "./ProfileScreen";
 export * from "./SavedEventsScreen";
 export * from "./SearchScreen";
 export * from "./UsersScreen";
+export * from "./InterestsOnboardingScreen";

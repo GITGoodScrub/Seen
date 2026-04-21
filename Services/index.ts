@@ -28,3 +28,5 @@ export * from "./notificationTypes";
 export * from "./notificationService";
 export * from "./eventReminderSettingsTypes";
 export * from "./eventReminderSettingsService";
+export * from "./interestTypes";
+export * from "./interestService";
