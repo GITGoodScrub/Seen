@@ -1,5 +1,5 @@
 import { StatusBar } from "expo-status-bar";
-import { useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Easing, Pressable, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AppHeader, BottomTabBar, SideMenuDrawer, SwipeBackGestureView } from "../components";
@@ -13,6 +13,7 @@ import {
     getDefaultTabKey,
     getDefaultRecentSearches,
     getSideMenuItems,
+    loadNotifications,
 } from "../Services";
 import { DiscoverScreen } from "./DiscoverScreen";
 import { EventCreationScreen } from "./EventCreationScreen";
@@ -56,6 +57,7 @@ const renderActiveScreen = (
     onStartProfileEditing: () => void,
     onStopProfileEditing: () => void,
     feedRefreshKey: number,
+    onUnreadCountChange: (count: number) => void,
     onSessionUpdate?: (nextSession: AuthSession) => void,
 ) =>
 {
@@ -92,7 +94,7 @@ const renderActiveScreen = (
 
     if (activeTabKey === "notifications")
     {
-        return <NotificationsScreen />;
+        return <NotificationsScreen onUnreadCountChange={onUnreadCountChange} />;
     }
 
     if (activeTabKey === "profile")
@@ -150,6 +152,7 @@ export const AppShellScreen = (
     const [isProfileEditing, setIsProfileEditing] = useState(false);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [isSideMenuVisible, setIsSideMenuVisible] = useState(false);
+    const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
     const [recentSearches, setRecentSearches] = useState<string[]>(
         getDefaultRecentSearches(),
     );
@@ -247,6 +250,11 @@ export const AppShellScreen = (
         setActiveTabKey(nextTabKey);
         setIsProfileEditing(false);
 
+        if (nextTabKey === "notifications")
+        {
+            void loadUnreadNotificationCount();
+        }
+
         if (nextTabKey === "profile")
         {
             setSelectedProfileUserId(null);
@@ -257,6 +265,44 @@ export const AppShellScreen = (
             closeSideMenu();
         }
     };
+
+    const loadUnreadNotificationCount = useCallback(
+        async (): Promise<void> =>
+        {
+            try
+            {
+                const notifications = await loadNotifications();
+                const unreadCount = notifications.filter((entry) => !entry.isRead).length;
+                setUnreadNotificationCount(unreadCount);
+            }
+            catch
+            {
+                // Keep previous badge count when refresh fails.
+            }
+        },
+        [],
+    );
+
+    useEffect(
+        () =>
+        {
+            void loadUnreadNotificationCount();
+
+            const timerId = setInterval(
+                () =>
+                {
+                    void loadUnreadNotificationCount();
+                },
+                45000,
+            );
+
+            return () =>
+            {
+                clearInterval(timerId);
+            };
+        },
+        [loadUnreadNotificationCount],
+    );
 
     const handleOpenNewPost = (): void =>
     {
@@ -643,6 +689,7 @@ export const AppShellScreen = (
                         handleStartProfileEditing,
                         handleStopProfileEditing,
                         feedRefreshKey,
+                        setUnreadNotificationCount,
                         onSessionUpdate,
                     )}
                 </View>
@@ -655,6 +702,7 @@ export const AppShellScreen = (
                         tabs={tabs}
                         activeTabKey={activeTabKey}
                         onTabPress={handleTabPress}
+                        badgeCountByTab={{ notifications: activeTabKey === "notifications" ? 0 : unreadNotificationCount }}
                     />
                 </SafeAreaView>
 
