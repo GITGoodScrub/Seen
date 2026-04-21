@@ -24,3 +24,5 @@ export * from "./venueTypes";
 export * from "./venueService";
 export * from "./tagTypes";
 export * from "./tagService";
+export * from "./notificationTypes";
+export * from "./notificationService";
