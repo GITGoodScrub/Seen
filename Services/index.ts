@@ -26,3 +26,5 @@ export * from "./tagTypes";
 export * from "./tagService";
 export * from "./notificationTypes";
 export * from "./notificationService";
+export * from "./eventReminderSettingsTypes";
+export * from "./eventReminderSettingsService";

@@ -8,6 +8,7 @@ import {
     Image,
     Pressable,
     ScrollView,
+    Switch,
     StyleSheet,
     Text,
     TextInput,
@@ -16,12 +17,15 @@ import {
 import * as ImagePicker from "expo-image-picker";
 import {
     AuthSession,
+    EventReminderSettings,
     FollowListType,
     FollowUser,
+    loadEventReminderSettings,
     loadFollowUsers,
     loadFollowSnapshot,
     ProfileActivityItem,
     ProfileRecord,
+    saveEventReminderSettings,
     getErrorMessageFromUnknown,
     getUsernameValidationMessage,
     loadProfileByUserId,
@@ -115,6 +119,16 @@ export const ProfileScreen = (
     const [followListErrorMessage, setFollowListErrorMessage] = useState<string | null>(null);
     const [followListUsers, setFollowListUsers] = useState<FollowUser[]>([]);
     const [profileActivity, setProfileActivity] = useState<ProfileActivityItem[]>([]);
+    const [eventReminderSettings, setEventReminderSettings] = useState<EventReminderSettings>(
+        {
+            remindOneWeek: true,
+            remindTwentyFourHours: true,
+            remindOneHour: true,
+        },
+    );
+    const [isReminderSettingsLoading, setIsReminderSettingsLoading] = useState(true);
+    const [isReminderSettingsSaving, setIsReminderSettingsSaving] = useState(false);
+    const [reminderSettingsErrorMessage, setReminderSettingsErrorMessage] = useState<string | null>(null);
     const [followListTabRowWidth, setFollowListTabRowWidth] = useState(0);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -207,6 +221,60 @@ export const ProfileScreen = (
             };
         },
         [selectedUserId],
+    );
+
+    useEffect(
+        () =>
+        {
+            if (!isOwnProfile)
+            {
+                setIsReminderSettingsLoading(false);
+                return;
+            }
+
+            let isCancelled = false;
+            setIsReminderSettingsLoading(true);
+
+            loadEventReminderSettings()
+                .then(
+                    (settings) =>
+                    {
+                        if (isCancelled)
+                        {
+                            return;
+                        }
+
+                        setEventReminderSettings(settings);
+                        setReminderSettingsErrorMessage(null);
+                    },
+                )
+                .catch(
+                    (caughtError: unknown) =>
+                    {
+                        if (isCancelled)
+                        {
+                            return;
+                        }
+
+                        setReminderSettingsErrorMessage(getErrorMessageFromUnknown(caughtError));
+                    },
+                )
+                .finally(
+                    () =>
+                    {
+                        if (!isCancelled)
+                        {
+                            setIsReminderSettingsLoading(false);
+                        }
+                    },
+                );
+
+            return () =>
+            {
+                isCancelled = true;
+            };
+        },
+        [isOwnProfile],
     );
 
     useEffect(
@@ -335,6 +403,45 @@ export const ProfileScreen = (
     {
         handleCloseFollowList();
         onOpenProfilePress?.(userId);
+    };
+
+    const handleToggleReminderSetting = (settingKey: keyof EventReminderSettings): void =>
+    {
+        if (isReminderSettingsSaving)
+        {
+            return;
+        }
+
+        const previousSettings = eventReminderSettings;
+        const nextSettings: EventReminderSettings = {
+            ...eventReminderSettings,
+            [settingKey]: !eventReminderSettings[settingKey],
+        };
+
+        setEventReminderSettings(nextSettings);
+        setIsReminderSettingsSaving(true);
+        setReminderSettingsErrorMessage(null);
+
+        saveEventReminderSettings(nextSettings)
+            .then(
+                (savedSettings) =>
+                {
+                    setEventReminderSettings(savedSettings);
+                },
+            )
+            .catch(
+                (caughtError: unknown) =>
+                {
+                    setEventReminderSettings(previousSettings);
+                    setReminderSettingsErrorMessage(getErrorMessageFromUnknown(caughtError));
+                },
+            )
+            .finally(
+                () =>
+                {
+                    setIsReminderSettingsSaving(false);
+                },
+            );
     };
 
     const handlePickProfilePhoto = async (): Promise<void> =>
@@ -623,6 +730,48 @@ export const ProfileScreen = (
 
                         <Text style={styles.photoHint}>Selected image is saved to your profile.</Text>
 
+                        <Text style={styles.sectionTitle}>Event Reminder Settings</Text>
+
+                        {isReminderSettingsLoading ? (
+                            <View style={styles.reminderLoadingRow}>
+                                <ActivityIndicator size="small" />
+                                <Text style={styles.readOnlyValue}>Loading reminder settings...</Text>
+                            </View>
+                        ) : (
+                            <View style={styles.reminderSettingsList}>
+                                <View style={styles.reminderSettingRow}>
+                                    <Text style={styles.reminderSettingLabel}>1 week before event</Text>
+                                    <Switch
+                                        value={eventReminderSettings.remindOneWeek}
+                                        onValueChange={() => handleToggleReminderSetting("remindOneWeek")}
+                                        disabled={isReminderSettingsSaving}
+                                    />
+                                </View>
+
+                                <View style={styles.reminderSettingRow}>
+                                    <Text style={styles.reminderSettingLabel}>24 hours before event</Text>
+                                    <Switch
+                                        value={eventReminderSettings.remindTwentyFourHours}
+                                        onValueChange={() => handleToggleReminderSetting("remindTwentyFourHours")}
+                                        disabled={isReminderSettingsSaving}
+                                    />
+                                </View>
+
+                                <View style={styles.reminderSettingRow}>
+                                    <Text style={styles.reminderSettingLabel}>1 hour before event</Text>
+                                    <Switch
+                                        value={eventReminderSettings.remindOneHour}
+                                        onValueChange={() => handleToggleReminderSetting("remindOneHour")}
+                                        disabled={isReminderSettingsSaving}
+                                    />
+                                </View>
+                            </View>
+                        )}
+
+                        {reminderSettingsErrorMessage ? (
+                            <Text style={styles.errorText}>{reminderSettingsErrorMessage}</Text>
+                        ) : null}
+
                         {errorMessage ? (
                             <Text style={styles.errorText}>{errorMessage}</Text>
                         ) : null}
@@ -891,6 +1040,36 @@ const styles = StyleSheet.create(
     {
         flex: 1,
         backgroundColor: "#f8fafc",
+    },
+    reminderLoadingRow:
+    {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 8,
+        marginBottom: 10,
+    },
+    reminderSettingsList:
+    {
+        gap: 10,
+        marginBottom: 8,
+    },
+    reminderSettingRow:
+    {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        borderWidth: 1,
+        borderColor: "#d9dee5",
+        borderRadius: 10,
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        backgroundColor: "#ffffff",
+    },
+    reminderSettingLabel:
+    {
+        fontSize: 14,
+        color: "#0f172a",
+        fontWeight: "600",
     },
     content:
     {
