@@ -15,6 +15,11 @@ export type EventSeriesItem = {
     nextOccurrenceId: number | null;
     averageRating: number | null;
     reviewCount: number;
+    tags: {
+        tagId: number;
+        name: string;
+        tagType: string | null;
+    }[];
 };
 
 export type EventSeriesFeedResponse = {

@@ -40,7 +40,31 @@ const isEventSeriesItem = (value: unknown): value is EventSeriesItem =>
         nextOccurrenceId?: unknown;
         averageRating?: unknown;
         reviewCount?: unknown;
+        tags?: unknown;
     };
+
+    const hasValidTags = Array.isArray(c.tags)
+        && c.tags.every(
+            (tag) =>
+            {
+                if (!tag || typeof tag !== "object")
+                {
+                    return false;
+                }
+
+                const typedTag = tag as {
+                    tagId?: unknown;
+                    name?: unknown;
+                    tagType?: unknown;
+                };
+
+                return (
+                    typeof typedTag.tagId === "number"
+                    && typeof typedTag.name === "string"
+                    && (typedTag.tagType === null || typeof typedTag.tagType === "string")
+                );
+            },
+        );
 
     return (
         typeof c.id === "number"
@@ -53,6 +77,7 @@ const isEventSeriesItem = (value: unknown): value is EventSeriesItem =>
         && (c.nextOccurrenceId === null || typeof c.nextOccurrenceId === "number")
         && (c.averageRating === null || typeof c.averageRating === "number")
         && typeof c.reviewCount === "number"
+        && hasValidTags
     );
 };
 
