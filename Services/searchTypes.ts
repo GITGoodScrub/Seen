@@ -12,6 +12,7 @@ export type SearchResult = {
     title: string;
     subtitle: string;
     isVerified?: boolean;
+    thumbnailUrl?: string | null;
 };
 
 export type SearchResponse = {

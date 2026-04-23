@@ -307,7 +307,7 @@ export const DiscoverScreen = (
                                                         <View style={styles.railFooter}>
                                                             <Text style={styles.railDate}>{formatDate(event.nextOccurrenceAt)}</Text>
                                                             <Pressable
-                                                                style={styles.railSaveButton}
+                                                                style={[styles.railSaveButton, isSaved ? styles.railSaveButtonSaved : null]}
                                                                 disabled={isSaveDisabled}
                                                                 onPress={() =>
                                                                 {
@@ -320,8 +320,9 @@ export const DiscoverScreen = (
                                                                 <Ionicons
                                                                     name={isSaved ? "bookmark" : "bookmark-outline"}
                                                                     size={16}
-                                                                    color={isSaved ? "#ffffff" : "#9ca3af"}
+                                                                    color={isSaved ? "#ffffff" : "#64748b"}
                                                                 />
+                                                                {isSaved ? <Text style={styles.railSaveButtonSavedLabel}>Saved</Text> : null}
                                                             </Pressable>
                                                         </View>
                                                     </View>
@@ -370,7 +371,7 @@ export const DiscoverScreen = (
                                                         <View style={styles.railFooter}>
                                                             <Text style={styles.railDate}>{formatDate(event.nextOccurrenceAt)}</Text>
                                                             <Pressable
-                                                                style={styles.railSaveButton}
+                                                                style={[styles.railSaveButton, isSaved ? styles.railSaveButtonSaved : null]}
                                                                 disabled={isSaveDisabled}
                                                                 onPress={() =>
                                                                 {
@@ -383,8 +384,9 @@ export const DiscoverScreen = (
                                                                 <Ionicons
                                                                     name={isSaved ? "bookmark" : "bookmark-outline"}
                                                                     size={16}
-                                                                    color={isSaved ? "#ffffff" : "#9ca3af"}
+                                                                    color={isSaved ? "#ffffff" : "#64748b"}
                                                                 />
+                                                                {isSaved ? <Text style={styles.railSaveButtonSavedLabel}>Saved</Text> : null}
                                                             </Pressable>
                                                         </View>
                                                     </View>
@@ -527,7 +529,7 @@ const styles = StyleSheet.create(
     },
     railSaveButton:
     {
-        width: 28,
+        minWidth: 28,
         height: 28,
         borderRadius: 14,
         backgroundColor: "#f8fafc",
@@ -535,5 +537,19 @@ const styles = StyleSheet.create(
         borderColor: "#d1d5db",
         alignItems: "center",
         justifyContent: "center",
+        flexDirection: "row",
+        gap: 4,
+        paddingHorizontal: 8,
+    },
+    railSaveButtonSaved:
+    {
+        backgroundColor: "#1d4ed8",
+        borderColor: "#1d4ed8",
+    },
+    railSaveButtonSavedLabel:
+    {
+        color: "#ffffff",
+        fontSize: 11,
+        fontWeight: "700",
     },
 });

@@ -230,6 +230,16 @@ export const AppShellScreen = (
             return;
         }
 
+        if (menuItem.key === "settings")
+        {
+            setActiveTabKey("profile");
+            setSelectedProfileUserId(null);
+            setIsProfileEditing(true);
+            setIsSearchOpen(false);
+            closeSideMenu();
+            return;
+        }
+
         if (isAppTabKey(menuItem.key))
         {
             setActiveTabKey(menuItem.key);

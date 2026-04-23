@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import {
     getErrorMessageFromUnknown,
     loadSearchResults,
@@ -72,6 +72,22 @@ const VerifiedBadge = () =>
             <Text style={styles.verifiedBadgeText}>✓</Text>
         </View>
     );
+};
+
+const getInitials = (value: string): string =>
+{
+    const words = value.trim().split(/\s+/).filter(Boolean);
+    if (words.length === 0)
+    {
+        return "?";
+    }
+
+    if (words.length === 1)
+    {
+        return words[0].slice(0, 1).toUpperCase();
+    }
+
+    return `${words[0][0]}${words[1][0]}`.toUpperCase();
 };
 
 export const SearchScreen = (
@@ -280,10 +296,20 @@ export const SearchScreen = (
                         style={styles.listRow}
                         onPress={() => handlePressSearchResult(result)}
                     >
-                        <Text style={styles.listTitle}>{result.title}</Text>
-                        <View style={styles.listSubtitleRow}>
-                            <Text style={styles.listSubtitle}>{result.subtitle}</Text>
-                            {result.type === "user" && result.isVerified ? <VerifiedBadge /> : null}
+                        {result.thumbnailUrl ? (
+                            <Image source={{ uri: result.thumbnailUrl }} style={styles.resultThumbnail} />
+                        ) : (
+                            <View style={styles.resultThumbnailFallback}>
+                                <Text style={styles.resultThumbnailFallbackText}>{getInitials(result.title)}</Text>
+                            </View>
+                        )}
+
+                        <View style={styles.listTextWrap}>
+                            <Text style={styles.listTitle} numberOfLines={1}>{result.title}</Text>
+                            <View style={styles.listSubtitleRow}>
+                                <Text style={styles.listSubtitle} numberOfLines={1}>{result.subtitle}</Text>
+                                {result.type === "user" && result.isVerified ? <VerifiedBadge /> : null}
+                            </View>
                         </View>
                     </Pressable>
                 );
@@ -448,10 +474,17 @@ const styles = StyleSheet.create(
         backgroundColor: "#ffffff",
         borderWidth: 1,
         borderColor: "#d9dee5",
-        borderRadius: 10,
+        borderRadius: 12,
         paddingVertical: 10,
         paddingHorizontal: 12,
         marginBottom: 8,
+        flexDirection: "row",
+        alignItems: "center",
+        columnGap: 10,
+    },
+    listTextWrap:
+    {
+        flex: 1,
     },
     listTitle:
     {
@@ -464,6 +497,7 @@ const styles = StyleSheet.create(
         fontSize: 12,
         color: "#64748b",
         marginTop: 2,
+        flexShrink: 1,
     },
     listSubtitleRow:
     {
@@ -481,6 +515,28 @@ const styles = StyleSheet.create(
         alignItems: "center",
         justifyContent: "center",
         marginTop: 2,
+    },
+    resultThumbnail:
+    {
+        width: 44,
+        height: 44,
+        borderRadius: 12,
+        backgroundColor: "#e2e8f0",
+    },
+    resultThumbnailFallback:
+    {
+        width: 44,
+        height: 44,
+        borderRadius: 12,
+        backgroundColor: "#e2e8f0",
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    resultThumbnailFallbackText:
+    {
+        fontSize: 14,
+        fontWeight: "700",
+        color: "#475569",
     },
     verifiedBadgeText:
     {

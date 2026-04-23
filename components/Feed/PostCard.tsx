@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 type PostCardProps = {
     authorName: string;
     bodyText: string;
+    createdAt?: string;
     authorPhotoUrl?: string | null;
     postImageUrl?: string | null;
     onDelete?: () => void;
@@ -18,6 +19,7 @@ export const PostCard = (
     {
         authorName,
         bodyText,
+        createdAt,
         authorPhotoUrl,
         postImageUrl,
         onDelete,
@@ -29,6 +31,31 @@ export const PostCard = (
     }: PostCardProps,
 ) =>
 {
+    const displayDate = (() =>
+    {
+        if (!createdAt)
+        {
+            return "Unknown date";
+        }
+
+        const parsedDate = new Date(createdAt);
+        if (Number.isNaN(parsedDate.getTime()))
+        {
+            return "Unknown date";
+        }
+
+        return parsedDate.toLocaleString(
+            "en-GB",
+            {
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+            },
+        );
+    })();
+
     const handleDeletePress = (): void =>
     {
         Alert.alert(
@@ -55,7 +82,7 @@ export const PostCard = (
                     )}
                     <View>
                         <Text style={styles.authorName}>{authorName}</Text>
-                        <Text style={styles.meta}>Just now</Text>
+                        <Text style={styles.meta}>{displayDate}</Text>
                     </View>
                 </View>
 
@@ -72,10 +99,13 @@ export const PostCard = (
             <Text style={styles.bodyText}>{bodyText}</Text>
 
             {postImageUrl ? (
-                <Image
-                    source={{ uri: postImageUrl }}
-                    style={styles.postImage}
-                />
+                <View style={styles.postImageWrap}>
+                    <Image
+                        source={{ uri: postImageUrl }}
+                        style={styles.postImage}
+                        resizeMode="contain"
+                    />
+                </View>
             ) : null}
             <View style={styles.separator} />
 
@@ -170,12 +200,18 @@ const styles = StyleSheet.create(
         color: "#1f2937",
         marginBottom: 0,
     },
-    postImage:
+    postImageWrap:
     {
-        height: 140,
-        borderRadius: 10,
+        height: 180,
+        borderRadius: 12,
         backgroundColor: "#e2e8f0",
         marginTop: 10,
+        overflow: "hidden",
+    },
+    postImage:
+    {
+        width: "100%",
+        height: "100%",
     },
     separator:
     {

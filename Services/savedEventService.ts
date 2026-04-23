@@ -20,6 +20,7 @@ const isSavedEventItem = (value: unknown): value is SavedEventItem =>
         && typeof c.eventStartTime === "string"
         && typeof c.seriesId === "number"
         && typeof c.seriesTitle === "string"
+        && (c.seriesPosterURL === null || typeof c.seriesPosterURL === "string")
         && typeof c.venueName === "string"
         && (c.averageRating === null || typeof c.averageRating === "number")
         && typeof c.reviewCount === "number"

@@ -29,12 +29,12 @@ const sideMenuItems: SideMenuItem[] = [
     {
         key: "settings",
         label: "Settings",
-        description: "App settings (placeholder)",
+        description: "Preferences and account options",
     },
     {
         key: "help",
         label: "Help",
-        description: "Support and documentation (placeholder)",
+        description: "Support and documentation",
     },
     {
         key: "logout",

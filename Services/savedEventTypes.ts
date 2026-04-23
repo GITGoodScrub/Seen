@@ -6,6 +6,7 @@ export type SavedEventItem = {
     eventStartTime: string;
     seriesId: number;
     seriesTitle: string;
+    seriesPosterURL: string | null;
     venueName: string;
     averageRating: number | null;
     reviewCount: number;

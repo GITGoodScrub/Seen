@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import {
     ActivityIndicator,
     Alert,
+    Image,
     Pressable,
     RefreshControl,
     ScrollView,
@@ -9,6 +10,7 @@ import {
     Text,
     View,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { ToastBanner } from "../components/Feedback";
 import {
     SavedEventItem,
@@ -161,6 +163,14 @@ export const SavedEventsScreen = (
                                 style={styles.cardPressArea}
                                 onPress={() => onEventPress?.(item.seriesId)}
                             >
+                                {item.seriesPosterURL ? (
+                                    <Image source={{ uri: item.seriesPosterURL }} style={styles.posterImage} />
+                                ) : (
+                                    <View style={styles.posterPlaceholder}>
+                                        <Ionicons name="musical-notes" size={32} color="#94a3b8" />
+                                    </View>
+                                )}
+
                                 <Text style={styles.title}>{item.seriesTitle}</Text>
                                 <Text style={styles.meta}>{item.venueName}</Text>
                                 <Text style={styles.meta}>
@@ -225,6 +235,24 @@ const styles = StyleSheet.create(
     cardPressArea:
     {
         paddingBottom: 4,
+    },
+    posterImage:
+    {
+        width: "100%",
+        height: 150,
+        borderRadius: 12,
+        backgroundColor: "#e2e8f0",
+        marginBottom: 10,
+    },
+    posterPlaceholder:
+    {
+        width: "100%",
+        height: 150,
+        borderRadius: 12,
+        backgroundColor: "#f1f5f9",
+        marginBottom: 10,
+        alignItems: "center",
+        justifyContent: "center",
     },
     title:
     {

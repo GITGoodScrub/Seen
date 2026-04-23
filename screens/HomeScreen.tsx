@@ -213,6 +213,7 @@ export const HomeScreen = (
                                     key={post.id}
                                     authorName={post.username ? `@${post.username}` : fallbackAuthor}
                                     bodyText={post.text}
+                                    createdAt={post.createdAt}
                                     authorPhotoUrl={post.authorProfilePhoto}
                                     postImageUrl={post.photoURL}
                                     onDelete={handleDelete}

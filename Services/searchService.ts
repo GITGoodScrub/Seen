@@ -23,6 +23,7 @@ const isSearchResult = (value: unknown): value is SearchResult =>
         title?: unknown;
         subtitle?: unknown;
         isVerified?: unknown;
+        thumbnailUrl?: unknown;
     };
 
     return (
@@ -31,6 +32,7 @@ const isSearchResult = (value: unknown): value is SearchResult =>
         && typeof candidate.title === "string"
         && typeof candidate.subtitle === "string"
         && (candidate.isVerified === undefined || typeof candidate.isVerified === "boolean")
+        && (candidate.thumbnailUrl === undefined || candidate.thumbnailUrl === null || typeof candidate.thumbnailUrl === "string")
     );
 };
 
