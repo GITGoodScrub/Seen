@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
     ActivityIndicator,
     KeyboardAvoidingView,
+    Modal,
     Platform,
     Pressable,
     StyleSheet,
@@ -21,6 +22,7 @@ import {
     signInWithEmail,
     signInWithGoogle,
     signUpWithEmail,
+    sendSeenPasswordResetEmail,             // line 255 - 287
 } from "../Services";
 
 WebBrowser.maybeCompleteAuthSession();
@@ -74,16 +76,18 @@ export const AuthScreen = (
     const [confirmPassword, setConfirmPassword] = useState("");
     const [errorMessage, setErrorMessage] = useState<string | null>(initialErrorMessage);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isResetOpen, setIsResetOpen] = useState(false);
+    const [resetEmail, setResetEmail] = useState("");
+    const [resetMessage, setResetMessage] = useState<string | null>(null);
 
     const googleWebClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? "";
     const googleAndroidClientId = process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID ?? "";
     const googleIosClientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID ?? "";
 
-    const googleClientIdForPlatform = Platform.OS === "ios"
-        ? googleIosClientId
-        : Platform.OS === "android"
-            ? googleAndroidClientId
-            : googleWebClientId;
+    const googleClientIdForPlatform =
+        googleIosClientId ||
+        googleAndroidClientId ||
+        googleWebClientId;
 
     const isGoogleConfigured = googleClientIdForPlatform.length > 0;
 
@@ -248,6 +252,39 @@ export const AuthScreen = (
             setIsSubmitting(false);
         }
     };
+    const handleSendReset = async (): Promise<void> =>
+    {
+        const normalizedEmail = normalizeField(resetEmail).toLowerCase();
+
+        if (!isConfigured)
+        {
+            setResetMessage("Firebase configuration is missing.");
+            return;
+        }
+
+        if (!isValidEmail(normalizedEmail))
+        {
+            setResetMessage("Please enter a valid email address.");
+            return;
+        }
+
+        setIsSubmitting(true);
+        setResetMessage(null);
+
+        try
+        {
+            await sendSeenPasswordResetEmail(normalizedEmail);
+            setResetMessage("Password reset email sent. Check your inbox.");
+        }
+        catch (caughtError)
+        {
+            setResetMessage(getErrorMessageFromUnknown(caughtError));
+        }
+        finally
+        {
+            setIsSubmitting(false);
+        }
+    };
 
     const handleGoogleAuth = async (): Promise<void> =>
     {
@@ -371,6 +408,30 @@ export const AuthScreen = (
                             editable={!isSubmitting}
                         />
 
+                        {mode === "login" ? (
+                            <Pressable
+                                onPress={() =>
+                                {
+                                    const normalizedEmail = normalizeField(email).toLowerCase();
+
+                                    if (normalizedEmail.length > 0)
+                                    {
+                                        setResetEmail(normalizedEmail);
+                                    }
+                                    else
+                                    {
+                                        setResetEmail("");
+                                    }
+
+                                    setResetMessage(null);
+                                    setIsResetOpen(true);
+                                }}
+                                disabled={isSubmitting}
+                            >
+                                <Text style={styles.secondaryActionText}>Forgot password?</Text>
+                            </Pressable>
+                        ) : null}
+
                         {mode === "signup" ? (
                             <TextInput
                                 style={styles.input}
@@ -426,6 +487,65 @@ export const AuthScreen = (
                     </View>
                 </View>
             </KeyboardAvoidingView>
+                <Modal
+                    visible={isResetOpen}
+                    transparent={true}
+                    animationType="fade"
+                    onRequestClose={() => setIsResetOpen(false)}
+                >
+                    <View style={styles.modalOverlay}>
+                        <View style={styles.modalCard}>
+                            <Text style={styles.modalTitle}>Reset password</Text>
+                            <Text style={styles.modalSubtitle}>
+                                Enter your email address and we’ll send you a reset link.
+                            </Text>
+
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Email"
+                                autoCapitalize="none"
+                                keyboardType="email-address"
+                                value={resetEmail}
+                                onChangeText={setResetEmail}
+                                editable={!isSubmitting}
+                            />
+
+                            {resetMessage ? (
+                                <Text style={styles.resetMessageText}>{resetMessage}</Text>
+                            ) : null}
+
+                            <Pressable
+                                style={[
+                                    styles.primaryButton,
+                                    isSubmitting ? styles.disabledButton : null,
+                                ]}
+                                onPress={() =>
+                                {
+                                    void handleSendReset();
+                                }}
+                                disabled={isSubmitting}
+                            >
+                                {isSubmitting ? (
+                                    <ActivityIndicator color="#ffffff" />
+                                ) : (
+                                    <Text style={styles.primaryButtonLabel}>Reset password</Text>
+                                )}
+                            </Pressable>
+
+                            <Pressable
+                                style={styles.modalSecondaryButton}
+                                onPress={() =>
+                                {
+                                    setIsResetOpen(false);
+                                    setResetMessage(null);
+                                }}
+                                disabled={isSubmitting}
+                            >
+                                <Text style={styles.modalSecondaryButtonText}>Cancel</Text>
+                            </Pressable>
+                        </View>
+                    </View>
+                </Modal>
         </SafeAreaView>
     );
 };
@@ -573,4 +693,67 @@ const styles = StyleSheet.create(
     {
         opacity: 0.6,
     },
+
+    secondaryActionText:
+{
+    fontSize: 13,
+    color: "#0f766e",
+    marginBottom: 10,
+    fontWeight: "600",
+},
+
+modalOverlay:
+{
+    flex: 1,
+    backgroundColor: "rgba(15, 23, 42, 0.35)",
+    justifyContent: "center",
+    paddingHorizontal: 20,
+},
+
+modalCard:
+{
+    backgroundColor: "#ffffff",
+    borderRadius: 16,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: "#d8e0ea",
+},
+
+modalTitle:
+{
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#0f172a",
+    marginBottom: 8,
+},
+
+modalSubtitle:
+{
+    fontSize: 14,
+    color: "#475569",
+    marginBottom: 14,
+},
+
+resetMessageText:
+{
+    fontSize: 13,
+    color: "#b91c1c",
+    marginBottom: 10,
+},
+
+modalSecondaryButton:
+{
+    minHeight: 42,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 8,
+},
+
+modalSecondaryButtonText:
+{
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#475569",
+},
 });

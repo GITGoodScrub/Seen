@@ -1,6 +1,7 @@
 {
   "expo": {
     "name": "Seen",
+    "owner": "hjalmar3",
     "slug": "Seen",
     "scheme": "seen",
     "version": "1.0.0",
