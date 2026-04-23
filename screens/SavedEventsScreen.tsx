@@ -164,7 +164,9 @@ export const SavedEventsScreen = (
                                 onPress={() => onEventPress?.(item.seriesId)}
                             >
                                 {item.seriesPosterURL ? (
-                                    <Image source={{ uri: item.seriesPosterURL }} style={styles.posterImage} />
+                                    <View style={styles.posterFrame}>
+                                        <Image source={{ uri: item.seriesPosterURL }} style={styles.posterImage} resizeMode="contain" />
+                                    </View>
                                 ) : (
                                     <View style={styles.posterPlaceholder}>
                                         <Ionicons name="musical-notes" size={32} color="#94a3b8" />
@@ -236,13 +238,19 @@ const styles = StyleSheet.create(
     {
         paddingBottom: 4,
     },
-    posterImage:
+    posterFrame:
     {
         width: "100%",
         height: 150,
         borderRadius: 12,
         backgroundColor: "#e2e8f0",
         marginBottom: 10,
+        overflow: "hidden",
+    },
+    posterImage:
+    {
+        width: "100%",
+        height: "100%",
     },
     posterPlaceholder:
     {
