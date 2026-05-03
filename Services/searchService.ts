@@ -23,14 +23,16 @@ const isSearchResult = (value: unknown): value is SearchResult =>
         title?: unknown;
         subtitle?: unknown;
         isVerified?: unknown;
+        thumbnailUrl?: unknown;
     };
 
     return (
         typeof candidate.id === "string"
-        && (candidate.type === "user" || candidate.type === "venue" || candidate.type === "post")
+        && (candidate.type === "user" || candidate.type === "venue" || candidate.type === "event")
         && typeof candidate.title === "string"
         && typeof candidate.subtitle === "string"
         && (candidate.isVerified === undefined || typeof candidate.isVerified === "boolean")
+        && (candidate.thumbnailUrl === undefined || candidate.thumbnailUrl === null || typeof candidate.thumbnailUrl === "string")
     );
 };
 

@@ -1,3 +1,14 @@
+export type ProfileActivityType = "post" | "seriesReview" | "venueReview";
+
+export type ProfileActivityItem = {
+    id: string;
+    type: ProfileActivityType;
+    createdAt: string;
+    text: string;
+    rating: number | null;
+    targetName: string | null;
+};
+
 export type ProfileRecord = {
     userId: number;
     username: string | null;
@@ -6,6 +17,7 @@ export type ProfileRecord = {
     bio: string | null;
     locationId: number | null;
     isVerified: boolean;
+    activity?: ProfileActivityItem[];
 };
 
 export type ProfileResponse = {

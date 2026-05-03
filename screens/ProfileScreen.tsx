@@ -8,6 +8,7 @@ import {
     Image,
     Pressable,
     ScrollView,
+    Switch,
     StyleSheet,
     Text,
     TextInput,
@@ -16,11 +17,19 @@ import {
 import * as ImagePicker from "expo-image-picker";
 import {
     AuthSession,
+    EventReminderSettings,
     FollowListType,
     FollowUser,
+    TagItem,
+    loadEventReminderSettings,
     loadFollowUsers,
     loadFollowSnapshot,
+    loadInterestSetup,
+    loadTags,
+    ProfileActivityItem,
     ProfileRecord,
+    saveEventReminderSettings,
+    saveUserInterests,
     getErrorMessageFromUnknown,
     getUsernameValidationMessage,
     loadProfileByUserId,
@@ -42,6 +51,38 @@ type ProfileScreenProps = {
 const safeString = (value: string | null | undefined): string =>
 {
     return value ?? "";
+};
+
+const formatActivityDate = (isoString: string): string =>
+{
+    const date = new Date(isoString);
+
+    return date.toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+    });
+};
+
+const getStars = (rating: number): string =>
+{
+    const safeRating = Math.max(1, Math.min(5, Math.round(rating)));
+    return "★".repeat(safeRating) + "☆".repeat(5 - safeRating);
+};
+
+const getActivityTypeLabel = (activityType: ProfileActivityItem["type"]): string =>
+{
+    if (activityType === "seriesReview")
+    {
+        return "Event Review";
+    }
+
+    if (activityType === "venueReview")
+    {
+        return "Venue Review";
+    }
+
+    return "Post";
 };
 
 const VerifiedBadge = () =>
@@ -81,6 +122,23 @@ export const ProfileScreen = (
     const [isFollowListLoading, setIsFollowListLoading] = useState(false);
     const [followListErrorMessage, setFollowListErrorMessage] = useState<string | null>(null);
     const [followListUsers, setFollowListUsers] = useState<FollowUser[]>([]);
+    const [profileActivity, setProfileActivity] = useState<ProfileActivityItem[]>([]);
+    const [eventReminderSettings, setEventReminderSettings] = useState<EventReminderSettings>(
+        {
+            remindOneWeek: true,
+            remindTwentyFourHours: true,
+            remindOneHour: true,
+        },
+    );
+    const [isReminderSettingsLoading, setIsReminderSettingsLoading] = useState(true);
+    const [isReminderSettingsSaving, setIsReminderSettingsSaving] = useState(false);
+    const [reminderSettingsErrorMessage, setReminderSettingsErrorMessage] = useState<string | null>(null);
+    const [selectedInterestTags, setSelectedInterestTags] = useState<TagItem[]>([]);
+    const [availableInterestTags, setAvailableInterestTags] = useState<TagItem[]>([]);
+    const [interestSearchQuery, setInterestSearchQuery] = useState("");
+    const [isInterestSettingsLoading, setIsInterestSettingsLoading] = useState(true);
+    const [isInterestSettingsSaving, setIsInterestSettingsSaving] = useState(false);
+    const [interestSettingsErrorMessage, setInterestSettingsErrorMessage] = useState<string | null>(null);
     const [followListTabRowWidth, setFollowListTabRowWidth] = useState(0);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -139,6 +197,7 @@ export const ProfileScreen = (
                     setBio(safeString(profile.bio));
                     setProfilePhoto(safeString(profile.profilePhoto));
                     setIsVerified(profile.isVerified);
+                    setProfileActivity(profile.activity ?? []);
                     setFollowingCount(followSnapshot.followingCount);
                     setFollowersCount(followSnapshot.followersCount);
                     setIsFollowingTarget(followSnapshot.isFollowingTarget);
@@ -153,6 +212,7 @@ export const ProfileScreen = (
                     }
 
                     setErrorMessage(getErrorMessageFromUnknown(caughtError));
+                    setProfileActivity([]);
                 }
                 finally
                 {
@@ -171,6 +231,118 @@ export const ProfileScreen = (
             };
         },
         [selectedUserId],
+    );
+
+    useEffect(
+        () =>
+        {
+            if (!isOwnProfile)
+            {
+                setIsReminderSettingsLoading(false);
+                return;
+            }
+
+            let isCancelled = false;
+            setIsReminderSettingsLoading(true);
+
+            loadEventReminderSettings()
+                .then(
+                    (settings) =>
+                    {
+                        if (isCancelled)
+                        {
+                            return;
+                        }
+
+                        setEventReminderSettings(settings);
+                        setReminderSettingsErrorMessage(null);
+                    },
+                )
+                .catch(
+                    (caughtError: unknown) =>
+                    {
+                        if (isCancelled)
+                        {
+                            return;
+                        }
+
+                        setReminderSettingsErrorMessage(getErrorMessageFromUnknown(caughtError));
+                    },
+                )
+                .finally(
+                    () =>
+                    {
+                        if (!isCancelled)
+                        {
+                            setIsReminderSettingsLoading(false);
+                        }
+                    },
+                );
+
+            return () =>
+            {
+                isCancelled = true;
+            };
+        },
+        [isOwnProfile],
+    );
+
+    useEffect(
+        () =>
+        {
+            if (!isOwnProfile)
+            {
+                setIsInterestSettingsLoading(false);
+                return;
+            }
+
+            let isCancelled = false;
+            setIsInterestSettingsLoading(true);
+
+            Promise.all([
+                loadInterestSetup(),
+                loadTags(),
+            ])
+                .then(
+                    ([interestSetup, tags]) =>
+                    {
+                        if (isCancelled)
+                        {
+                            return;
+                        }
+
+                        setSelectedInterestTags(interestSetup.selectedTags);
+                        setAvailableInterestTags(tags);
+                        setInterestSettingsErrorMessage(null);
+                    },
+                )
+                .catch(
+                    (caughtError: unknown) =>
+                    {
+                        if (isCancelled)
+                        {
+                            return;
+                        }
+
+                        setInterestSettingsErrorMessage(getErrorMessageFromUnknown(caughtError));
+                    },
+                )
+                .finally(
+                    () =>
+                    {
+                        if (!isCancelled)
+                        {
+                            setIsInterestSettingsLoading(false);
+                        }
+                    },
+                );
+
+            return () =>
+            {
+                isCancelled = true;
+            };
+        },
+        [isOwnProfile],
     );
 
     useEffect(
@@ -299,6 +471,135 @@ export const ProfileScreen = (
     {
         handleCloseFollowList();
         onOpenProfilePress?.(userId);
+    };
+
+    const handleToggleReminderSetting = (settingKey: keyof EventReminderSettings): void =>
+    {
+        if (isReminderSettingsSaving)
+        {
+            return;
+        }
+
+        const previousSettings = eventReminderSettings;
+        const nextSettings: EventReminderSettings = {
+            ...eventReminderSettings,
+            [settingKey]: !eventReminderSettings[settingKey],
+        };
+
+        setEventReminderSettings(nextSettings);
+        setIsReminderSettingsSaving(true);
+        setReminderSettingsErrorMessage(null);
+
+        saveEventReminderSettings(nextSettings)
+            .then(
+                (savedSettings) =>
+                {
+                    setEventReminderSettings(savedSettings);
+                },
+            )
+            .catch(
+                (caughtError: unknown) =>
+                {
+                    setEventReminderSettings(previousSettings);
+                    setReminderSettingsErrorMessage(getErrorMessageFromUnknown(caughtError));
+                },
+            )
+            .finally(
+                () =>
+                {
+                    setIsReminderSettingsSaving(false);
+                },
+            );
+    };
+
+    const filteredInterestOptions = useMemo(
+        () =>
+        {
+            const selectedTagIdSet = new Set(selectedInterestTags.map((entry) => entry.tagId));
+            const normalizedQuery = interestSearchQuery.trim().toLowerCase();
+
+            return availableInterestTags
+                .filter((entry) => !selectedTagIdSet.has(entry.tagId))
+                .filter((entry) =>
+                {
+                    if (normalizedQuery.length === 0)
+                    {
+                        return true;
+                    }
+
+                    return entry.name.toLowerCase().includes(normalizedQuery);
+                })
+                .slice(0, 20);
+        },
+        [availableInterestTags, interestSearchQuery, selectedInterestTags],
+    );
+
+    const persistInterests = (nextSelectedTags: TagItem[]): void =>
+    {
+        setIsInterestSettingsSaving(true);
+        setInterestSettingsErrorMessage(null);
+
+        saveUserInterests(nextSelectedTags.map((entry) => entry.tagId))
+            .then(
+                (updatedSetup) =>
+                {
+                    setSelectedInterestTags(updatedSetup.selectedTags);
+                },
+            )
+            .catch(
+                (caughtError: unknown) =>
+                {
+                    setInterestSettingsErrorMessage(getErrorMessageFromUnknown(caughtError));
+                },
+            )
+            .finally(
+                () =>
+                {
+                    setIsInterestSettingsSaving(false);
+                },
+            );
+    };
+
+    const handleAddInterestTag = (tag: TagItem): void =>
+    {
+        if (isInterestSettingsSaving)
+        {
+            return;
+        }
+
+        if (selectedInterestTags.some((entry) => entry.tagId === tag.tagId))
+        {
+            return;
+        }
+
+        const previous = selectedInterestTags;
+        const next = [...selectedInterestTags, tag];
+
+        setSelectedInterestTags(next);
+        setInterestSearchQuery("");
+        persistInterests(next);
+
+        if (interestSettingsErrorMessage)
+        {
+            setInterestSettingsErrorMessage(null);
+        }
+
+        if (next.length === previous.length)
+        {
+            return;
+        }
+    };
+
+    const handleRemoveInterestTag = (tagId: number): void =>
+    {
+        if (isInterestSettingsSaving)
+        {
+            return;
+        }
+
+        const next = selectedInterestTags.filter((entry) => entry.tagId !== tagId);
+        setSelectedInterestTags(next);
+        persistInterests(next);
     };
 
     const handlePickProfilePhoto = async (): Promise<void> =>
@@ -587,6 +888,104 @@ export const ProfileScreen = (
 
                         <Text style={styles.photoHint}>Selected image is saved to your profile.</Text>
 
+                        <Text style={styles.sectionTitle}>Event Reminder Settings</Text>
+
+                        {isReminderSettingsLoading ? (
+                            <View style={styles.reminderLoadingRow}>
+                                <ActivityIndicator size="small" />
+                                <Text style={styles.readOnlyValue}>Loading reminder settings...</Text>
+                            </View>
+                        ) : (
+                            <View style={styles.reminderSettingsList}>
+                                <View style={styles.reminderSettingRow}>
+                                    <Text style={styles.reminderSettingLabel}>1 week before event</Text>
+                                    <Switch
+                                        value={eventReminderSettings.remindOneWeek}
+                                        onValueChange={() => handleToggleReminderSetting("remindOneWeek")}
+                                        disabled={isReminderSettingsSaving}
+                                    />
+                                </View>
+
+                                <View style={styles.reminderSettingRow}>
+                                    <Text style={styles.reminderSettingLabel}>24 hours before event</Text>
+                                    <Switch
+                                        value={eventReminderSettings.remindTwentyFourHours}
+                                        onValueChange={() => handleToggleReminderSetting("remindTwentyFourHours")}
+                                        disabled={isReminderSettingsSaving}
+                                    />
+                                </View>
+
+                                <View style={styles.reminderSettingRow}>
+                                    <Text style={styles.reminderSettingLabel}>1 hour before event</Text>
+                                    <Switch
+                                        value={eventReminderSettings.remindOneHour}
+                                        onValueChange={() => handleToggleReminderSetting("remindOneHour")}
+                                        disabled={isReminderSettingsSaving}
+                                    />
+                                </View>
+                            </View>
+                        )}
+
+                        {reminderSettingsErrorMessage ? (
+                            <Text style={styles.errorText}>{reminderSettingsErrorMessage}</Text>
+                        ) : null}
+
+                        <Text style={styles.sectionTitle}>Interests</Text>
+
+                        {isInterestSettingsLoading ? (
+                            <View style={styles.reminderLoadingRow}>
+                                <ActivityIndicator size="small" />
+                                <Text style={styles.readOnlyValue}>Loading interests...</Text>
+                            </View>
+                        ) : (
+                            <>
+                                <TextInput
+                                    style={styles.input}
+                                    value={interestSearchQuery}
+                                    onChangeText={setInterestSearchQuery}
+                                    editable={!isInterestSettingsSaving}
+                                    placeholder="Search interests (e.g., comedy, theatre, concert)"
+                                    placeholderTextColor="#94a3b8"
+                                />
+
+                                {selectedInterestTags.length > 0 ? (
+                                    <View style={styles.interestTagChipRow}>
+                                        {selectedInterestTags.map((tag) => (
+                                            <Pressable
+                                                key={`selected-interest-${tag.tagId}`}
+                                                style={styles.interestTagChip}
+                                                onPress={() => handleRemoveInterestTag(tag.tagId)}
+                                                disabled={isInterestSettingsSaving}
+                                            >
+                                                <Text style={styles.interestTagChipText}>{tag.name} ×</Text>
+                                            </Pressable>
+                                        ))}
+                                    </View>
+                                ) : (
+                                    <Text style={styles.photoHint}>No interests selected yet.</Text>
+                                )}
+
+                                {filteredInterestOptions.length > 0 ? (
+                                    <View style={styles.interestSuggestionList}>
+                                        {filteredInterestOptions.map((tag) => (
+                                            <Pressable
+                                                key={`interest-option-${tag.tagId}`}
+                                                style={styles.interestSuggestionRow}
+                                                onPress={() => handleAddInterestTag(tag)}
+                                                disabled={isInterestSettingsSaving}
+                                            >
+                                                <Text style={styles.interestSuggestionLabel}>{tag.name}</Text>
+                                            </Pressable>
+                                        ))}
+                                    </View>
+                                ) : null}
+                            </>
+                        )}
+
+                        {interestSettingsErrorMessage ? (
+                            <Text style={styles.errorText}>{interestSettingsErrorMessage}</Text>
+                        ) : null}
+
                         {errorMessage ? (
                             <Text style={styles.errorText}>{errorMessage}</Text>
                         ) : null}
@@ -657,6 +1056,32 @@ export const ProfileScreen = (
                             </Pressable>
                         ) : null}
                     </>
+                )}
+            </View>
+
+            <View style={styles.panel}>
+                <Text style={styles.sectionTitle}>Posts & Reviews</Text>
+                {profileActivity.length === 0 ? (
+                    <Text style={styles.readOnlyValue}>No activity yet.</Text>
+                ) : (
+                    profileActivity.map((activityItem) => (
+                        <View key={activityItem.id} style={styles.activityRow}>
+                            <Text style={styles.activityMetaText}>
+                                {getActivityTypeLabel(activityItem.type)}
+                                {" · "}
+                                {formatActivityDate(activityItem.createdAt)}
+                            </Text>
+                            {activityItem.targetName ? (
+                                <Text style={styles.activityTargetName}>{activityItem.targetName}</Text>
+                            ) : null}
+                            {activityItem.rating !== null ? (
+                                <Text style={styles.activityRatingText}>
+                                    {activityItem.rating}/5 {getStars(activityItem.rating)}
+                                </Text>
+                            ) : null}
+                            <Text style={styles.readOnlyValue}>{activityItem.text}</Text>
+                        </View>
+                    ))
                 )}
             </View>
             </ScrollView>
@@ -829,6 +1254,81 @@ const styles = StyleSheet.create(
     {
         flex: 1,
         backgroundColor: "#f8fafc",
+    },
+    reminderLoadingRow:
+    {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 8,
+        marginBottom: 10,
+    },
+    reminderSettingsList:
+    {
+        gap: 10,
+        marginBottom: 8,
+    },
+    reminderSettingRow:
+    {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        borderWidth: 1,
+        borderColor: "#d9dee5",
+        borderRadius: 10,
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        backgroundColor: "#ffffff",
+    },
+    reminderSettingLabel:
+    {
+        fontSize: 14,
+        color: "#0f172a",
+        fontWeight: "600",
+    },
+    interestTagChipRow:
+    {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        gap: 8,
+        marginBottom: 10,
+    },
+    interestTagChip:
+    {
+        borderRadius: 999,
+        borderWidth: 1,
+        borderColor: "#93c5fd",
+        backgroundColor: "#dbeafe",
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+    },
+    interestTagChipText:
+    {
+        fontSize: 12,
+        fontWeight: "700",
+        color: "#1d4ed8",
+    },
+    interestSuggestionList:
+    {
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: "#d9dee5",
+        backgroundColor: "#ffffff",
+        marginBottom: 8,
+        overflow: "hidden",
+    },
+    interestSuggestionRow:
+    {
+        minHeight: 38,
+        justifyContent: "center",
+        paddingHorizontal: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: "#eef2f7",
+    },
+    interestSuggestionLabel:
+    {
+        fontSize: 13,
+        color: "#334155",
+        fontWeight: "600",
     },
     content:
     {
@@ -1129,6 +1629,40 @@ const styles = StyleSheet.create(
         padding: 16,
         borderWidth: 1,
         borderColor: "#e2e8f0",
+        marginTop: 12,
+    },
+    sectionTitle:
+    {
+        fontSize: 16,
+        fontWeight: "700",
+        color: "#0f172a",
+        marginBottom: 10,
+    },
+    activityRow:
+    {
+        borderTopWidth: 1,
+        borderTopColor: "#e2e8f0",
+        paddingTop: 10,
+        marginTop: 10,
+    },
+    activityMetaText:
+    {
+        fontSize: 12,
+        color: "#64748b",
+        marginBottom: 4,
+    },
+    activityTargetName:
+    {
+        fontSize: 13,
+        color: "#334155",
+        fontWeight: "700",
+        marginBottom: 4,
+    },
+    activityRatingText:
+    {
+        fontSize: 13,
+        color: "#f59e0b",
+        marginBottom: 4,
     },
     readOnlyRow:
     {
