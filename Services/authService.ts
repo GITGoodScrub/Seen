@@ -17,6 +17,7 @@ import { Platform } from "react-native";
 import { requestJsonWithFailover, setApiAuthToken } from "./apiClientService";
 import { AuthSession, GoogleTokenSet, VerifyAuthResponse } from "./authTypes";
 import { setCurrentUsername } from "./usernameService";
+import { sendPasswordResetEmail } from "firebase/auth"; //line 162
 
 const authVerifyRoute = "/api/auth/verify";
 type AuthIntent = "login" | "signup";
@@ -156,6 +157,14 @@ const getFirebaseAuth = (): Auth =>
     }
 
     return cachedFirebaseAuth;
+};
+
+export const sendSeenPasswordResetEmail = async (
+    email: string,
+): Promise<void> =>
+{
+    const auth = getFirebaseAuth();
+    await sendPasswordResetEmail(auth, email.trim().toLowerCase());
 };
 
 const verifyFirebaseTokenWithBackend = async (
