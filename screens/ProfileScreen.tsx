@@ -42,6 +42,7 @@ type ProfileScreenProps = {
     authSession: AuthSession;
     profileUserId?: number | null;
     isEditing?: boolean;
+    openFollowListRequest?: number;
     onOpenProfilePress?: (profileUserId: number) => void;
     onStartEditing?: () => void;
     onStopEditing?: () => void;
@@ -99,6 +100,7 @@ export const ProfileScreen = (
         authSession,
         profileUserId,
         isEditing = false,
+        openFollowListRequest = 0,
         onOpenProfilePress,
         onStartEditing,
         onStopEditing,
@@ -119,6 +121,7 @@ export const ProfileScreen = (
     const [followingCount, setFollowingCount] = useState(0);
     const [activeFollowListType, setActiveFollowListType] = useState<FollowListType>("followers");
     const [isFollowListVisible, setIsFollowListVisible] = useState(false);
+    const prevOpenFollowListRequestRef = useRef(0);
     const [isFollowListLoading, setIsFollowListLoading] = useState(false);
     const [followListErrorMessage, setFollowListErrorMessage] = useState<string | null>(null);
     const [followListUsers, setFollowListUsers] = useState<FollowUser[]>([]);
@@ -419,6 +422,19 @@ export const ProfileScreen = (
             setIsFollowListLoading(false);
         }
     };
+
+    useEffect(
+        () =>
+        {
+            if (openFollowListRequest > 0 && openFollowListRequest !== prevOpenFollowListRequestRef.current)
+            {
+                prevOpenFollowListRequestRef.current = openFollowListRequest;
+                handleOpenFollowList("followers");
+            }
+        },
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [openFollowListRequest],
+    );
 
     const handleOpenFollowList = (listType: FollowListType): void =>
     {

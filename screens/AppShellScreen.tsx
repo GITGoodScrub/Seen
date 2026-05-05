@@ -53,6 +53,7 @@ const renderActiveScreen = (
     authSession: AuthSession,
     selectedProfileUserId: number | null,
     isProfileEditing: boolean,
+    openFollowListRequest: number,
     onOpenProfilePress: (profileUserId: number) => void,
     onStartProfileEditing: () => void,
     onStopProfileEditing: () => void,
@@ -104,6 +105,7 @@ const renderActiveScreen = (
                 authSession={authSession}
                 profileUserId={selectedProfileUserId}
                 isEditing={isProfileEditing}
+                openFollowListRequest={openFollowListRequest}
                 onOpenProfilePress={onOpenProfilePress}
                 onStartEditing={onStartProfileEditing}
                 onStopEditing={onStopProfileEditing}
@@ -152,6 +154,7 @@ export const AppShellScreen = (
     const [isProfileEditing, setIsProfileEditing] = useState(false);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [isSideMenuVisible, setIsSideMenuVisible] = useState(false);
+    const [openFollowListRequestCount, setOpenFollowListRequestCount] = useState(0);
     const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
     const [recentSearches, setRecentSearches] = useState<string[]>(
         getDefaultRecentSearches(),
@@ -235,6 +238,18 @@ export const AppShellScreen = (
             setActiveTabKey("profile");
             setSelectedProfileUserId(null);
             setIsProfileEditing(true);
+            setOpenFollowListRequestCount(0);
+            setIsSearchOpen(false);
+            closeSideMenu();
+            return;
+        }
+
+        if (menuItem.key === "followers")
+        {
+            setActiveTabKey("profile");
+            setSelectedProfileUserId(null);
+            setIsProfileEditing(false);
+            setOpenFollowListRequestCount((c) => c + 1);
             setIsSearchOpen(false);
             closeSideMenu();
             return;
@@ -248,6 +263,7 @@ export const AppShellScreen = (
             if (menuItem.key === "profile")
             {
                 setSelectedProfileUserId(null);
+                setOpenFollowListRequestCount(0);
             }
         }
 
@@ -268,6 +284,7 @@ export const AppShellScreen = (
         if (nextTabKey === "profile")
         {
             setSelectedProfileUserId(null);
+            setOpenFollowListRequestCount(0);
         }
 
         if (isSideMenuVisible)
@@ -657,6 +674,9 @@ export const AppShellScreen = (
                     <SideMenuDrawer
                         items={sideMenuItems}
                         onItemPress={handleSideMenuItemPress}
+                        displayName={authSession.user.profile?.displayName ?? null}
+                        username={authSession.user.username ?? null}
+                        profilePhoto={authSession.user.profile?.profilePhoto ?? null}
                     />
                 </SafeAreaView>
             </Animated.View>
@@ -695,6 +715,7 @@ export const AppShellScreen = (
                         authSession,
                         selectedProfileUserId,
                         isProfileEditing,
+                        openFollowListRequestCount,
                         handleOpenProfile,
                         handleStartProfileEditing,
                         handleStopProfileEditing,
