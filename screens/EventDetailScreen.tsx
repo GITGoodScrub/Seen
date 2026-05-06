@@ -10,15 +10,19 @@ import {
     TextInput,
     View,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { SelectDropdown } from "../components/Inputs/SelectDropdown";
 import {
     AuthSession,
     createSeriesReview,
+    deleteSeriesReview,
     deleteEventSeries,
     EventOccurrenceDetail,
     EventSeriesReviewItem,
     EventSeriesDetail,
     getErrorMessageFromUnknown,
     loadEventSeriesDetail,
+    updateSeriesReview,
 } from "../Services";
 
 type EventDetailScreenProps = {
@@ -68,6 +72,14 @@ const getStars = (rating: number): string =>
     return "★".repeat(safeRating) + "☆".repeat(5 - safeRating);
 };
 
+const reviewVisibilityOptions = [
+    { label: "Everyone", value: "public" },
+    { label: "Followers", value: "followersOnly" },
+    { label: "Only me", value: "private" },
+] as const;
+
+type ReviewVisibilityValue = (typeof reviewVisibilityOptions)[number]["value"];
+
 export const EventDetailScreen = (
     {
         eventSeriesId,
@@ -84,8 +96,21 @@ export const EventDetailScreen = (
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [reviewRating, setReviewRating] = useState(5);
     const [reviewText, setReviewText] = useState("");
+    const [reviewVisibility, setReviewVisibility] = useState<ReviewVisibilityValue>("public");
+    const [editingReviewId, setEditingReviewId] = useState<number | null>(null);
     const [isSubmittingReview, setIsSubmittingReview] = useState(false);
     const [isDeletingEvent, setIsDeletingEvent] = useState(false);
+
+    const resetReviewComposer = useCallback(
+        (): void =>
+        {
+            setReviewText("");
+            setReviewRating(5);
+            setReviewVisibility("public");
+            setEditingReviewId(null);
+        },
+        [],
+    );
 
     const loadDetail = useCallback(
         async (isRefresh = false): Promise<void> =>
@@ -178,19 +203,35 @@ export const EventDetailScreen = (
 
         try
         {
-            await createSeriesReview(
-                {
-                    seriesId: eventSeriesId,
-                    rating: reviewRating,
-                    text: reviewText.trim(),
-                    visibility: "public",
-                },
-            );
+            if (editingReviewId === null)
+            {
+                await createSeriesReview(
+                    {
+                        seriesId: eventSeriesId,
+                        rating: reviewRating,
+                        text: reviewText.trim(),
+                        visibility: reviewVisibility,
+                    },
+                );
+            }
+            else
+            {
+                await updateSeriesReview(
+                    {
+                        reviewId: editingReviewId,
+                        rating: reviewRating,
+                        text: reviewText.trim(),
+                        visibility: reviewVisibility,
+                    },
+                );
+            }
 
-            setReviewText("");
-            setReviewRating(5);
+            resetReviewComposer();
             await loadDetail(true);
-            Alert.alert("Thanks!", "Your review was submitted.");
+            Alert.alert(
+                "Thanks!",
+                editingReviewId === null ? "Your review was submitted." : "Your review was updated.",
+            );
         }
         catch (caughtError)
         {
@@ -201,6 +242,81 @@ export const EventDetailScreen = (
             setIsSubmittingReview(false);
         }
     };
+
+    const handleEditReview = useCallback(
+        (review: EventSeriesReviewItem): void =>
+        {
+            setEditingReviewId(review.reviewId);
+            setReviewRating(review.rating);
+            setReviewText(review.text);
+            setReviewVisibility(
+                review.visibility === "friendsOnly" ? "followersOnly" : review.visibility,
+            );
+        },
+        [],
+    );
+
+    const handleDeleteReview = useCallback(
+        (reviewId: number): void =>
+        {
+            Alert.alert(
+                "Delete review",
+                "Are you sure you want to delete this review?",
+                [
+                    { text: "Cancel", style: "cancel" },
+                    {
+                        text: "Delete",
+                        style: "destructive",
+                        onPress: () =>
+                        {
+                            void (async () =>
+                            {
+                                try
+                                {
+                                    await deleteSeriesReview(reviewId);
+
+                                    if (editingReviewId === reviewId)
+                                    {
+                                        resetReviewComposer();
+                                    }
+
+                                    await loadDetail(true);
+                                }
+                                catch (caughtError)
+                                {
+                                    Alert.alert("Delete failed", getErrorMessageFromUnknown(caughtError));
+                                }
+                            })();
+                        },
+                    },
+                ],
+            );
+        },
+        [editingReviewId, loadDetail, resetReviewComposer],
+    );
+
+    const handleReviewMenuPress = useCallback(
+        (review: EventSeriesReviewItem): void =>
+        {
+            Alert.alert(
+                "Review actions",
+                undefined,
+                [
+                    {
+                        text: "Edit",
+                        onPress: () => handleEditReview(review),
+                    },
+                    {
+                        text: "Delete",
+                        style: "destructive",
+                        onPress: () => handleDeleteReview(review.reviewId),
+                    },
+                    { text: "Cancel", style: "cancel" },
+                ],
+            );
+        },
+        [handleDeleteReview, handleEditReview],
+    );
 
     const canManageEvent = useMemo(
         () =>
@@ -352,7 +468,9 @@ export const EventDetailScreen = (
                 )}
 
                 <View style={styles.reviewComposer}>
-                    <Text style={styles.reviewComposerTitle}>Leave a review</Text>
+                    <Text style={styles.reviewComposerTitle}>
+                        {editingReviewId === null ? "Leave a review" : "Edit your review"}
+                    </Text>
                     <View style={styles.starPickerRow}>
                         {[1, 2, 3, 4, 5].map((value) => (
                             <Pressable
@@ -381,15 +499,36 @@ export const EventDetailScreen = (
                         multiline={true}
                         style={styles.reviewInput}
                     />
+                    <View style={styles.reviewVisibilityBlock}>
+                        <Text style={styles.reviewVisibilityLabel}>Review visibility</Text>
+                        <Text style={styles.reviewVisibilityHint}>Who can see this review:</Text>
+                        <SelectDropdown
+                            disabled={isSubmittingReview}
+                            selectedValue={reviewVisibility}
+                            options={reviewVisibilityOptions}
+                            onValueChange={setReviewVisibility}
+                        />
+                    </View>
                     <Pressable
                         style={styles.submitReviewButton}
                         disabled={isSubmittingReview}
                         onPress={() => { void handleSubmitReview(); }}
                     >
                         <Text style={styles.submitReviewButtonText}>
-                            {isSubmittingReview ? "Submitting..." : "Submit review"}
+                            {isSubmittingReview
+                                ? (editingReviewId === null ? "Submitting..." : "Saving...")
+                                : (editingReviewId === null ? "Submit review" : "Save changes")}
                         </Text>
                     </Pressable>
+                    {editingReviewId !== null ? (
+                        <Pressable
+                            style={styles.cancelReviewEditButton}
+                            disabled={isSubmittingReview}
+                            onPress={resetReviewComposer}
+                        >
+                            <Text style={styles.cancelReviewEditButtonText}>Cancel edit</Text>
+                        </Pressable>
+                    ) : null}
                 </View>
             </View>
 
@@ -400,13 +539,28 @@ export const EventDetailScreen = (
                 ) : (
                     eventDetail.reviews.map((review) => (
                         <View key={review.reviewId} style={styles.occurrenceRow}>
-                            <Text style={styles.reviewTopLine}>
-                                {(review.username ? `@${review.username}` : "Unknown user")}
-                                {" · "}
-                                {review.rating}/5
-                                {" · "}
-                                {formatReviewDate(review.createdAt)}
-                            </Text>
+                            <View style={styles.reviewHeaderRow}>
+                                <Text style={styles.reviewTopLine}>
+                                    {(review.username ? `@${review.username}` : "Unknown user")}
+                                    {" · "}
+                                    {review.rating}/5
+                                    {" · "}
+                                    {formatReviewDate(review.createdAt)}
+                                </Text>
+                                {(Number(review.userId) === Number(authSession.user.id)
+                                    || (
+                                        typeof review.username === "string"
+                                        && typeof authSession.user.username === "string"
+                                        && review.username.toLowerCase() === authSession.user.username.toLowerCase()
+                                    )) ? (
+                                    <Pressable
+                                        style={styles.reviewMenuButton}
+                                        onPress={() => handleReviewMenuPress(review)}
+                                    >
+                                        <Ionicons name="ellipsis-horizontal" size={18} color="#64748b" />
+                                    </Pressable>
+                                ) : null}
+                            </View>
                             <Text style={styles.reviewStars}>{getStars(review.rating)}</Text>
                             <Text style={styles.bodyText}>{review.text}</Text>
                         </View>
@@ -583,6 +737,20 @@ const styles = StyleSheet.create({
         color: "#0f172a",
         backgroundColor: "#ffffff",
     },
+    reviewVisibilityBlock: {
+        marginBottom: 8,
+    },
+    reviewVisibilityLabel: {
+        fontSize: 13,
+        fontWeight: "700",
+        color: "#0f172a",
+        marginBottom: 2,
+    },
+    reviewVisibilityHint: {
+        fontSize: 12,
+        color: "#64748b",
+        marginBottom: 4,
+    },
     submitReviewButton: {
         alignSelf: "flex-start",
         borderRadius: 8,
@@ -590,15 +758,38 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12,
         paddingVertical: 8,
     },
+    cancelReviewEditButton: {
+        alignSelf: "flex-start",
+        marginTop: 8,
+        paddingHorizontal: 4,
+        paddingVertical: 4,
+    },
+    cancelReviewEditButtonText: {
+        color: "#64748b",
+        fontSize: 13,
+        fontWeight: "600",
+    },
     submitReviewButtonText: {
         color: "#ffffff",
         fontWeight: "700",
         fontSize: 13,
     },
+    reviewHeaderRow: {
+        flexDirection: "row",
+        alignItems: "flex-start",
+        justifyContent: "space-between",
+        gap: 8,
+    },
     reviewTopLine: {
         fontSize: 12,
         color: "#64748b",
         marginBottom: 4,
+        flex: 1,
+    },
+    reviewMenuButton: {
+        paddingHorizontal: 2,
+        paddingVertical: 2,
+        marginTop: -2,
     },
     reviewStars: {
         fontSize: 13,

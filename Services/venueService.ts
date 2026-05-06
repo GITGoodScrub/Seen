@@ -1,5 +1,10 @@
 import { requestJsonWithFailover } from "./apiClientService";
-import { CreateVenueReviewRequest, VenueDetail, VenueDetailResponse } from "./venueTypes";
+import {
+    CreateVenueReviewRequest,
+    UpdateVenueReviewRequest,
+    VenueDetail,
+    VenueDetailResponse,
+} from "./venueTypes";
 
 const venueDetailRoute = (id: number): string => `/api/venues/${id}`;
 const venueReviewsRoute = "/api/venueReviews";
@@ -48,6 +53,32 @@ export const createVenueReview = async (
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(request),
+        },
+    );
+};
+
+export const updateVenueReview = async (
+    request: UpdateVenueReviewRequest,
+): Promise<void> =>
+{
+    await requestJsonWithFailover<{ venueReview: unknown }>(
+        venueReviewsRoute,
+        {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(request),
+        },
+    );
+};
+
+export const deleteVenueReview = async (reviewId: number): Promise<void> =>
+{
+    await requestJsonWithFailover<{ message?: string }>(
+        venueReviewsRoute,
+        {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ reviewId }),
         },
     );
 };

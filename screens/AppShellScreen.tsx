@@ -554,7 +554,7 @@ export const AppShellScreen = (
                             <View style={styles.eventDetailSpacer} />
                         </View>
 
-                        <VenueDetailScreen venueId={openVenueId} />
+                        <VenueDetailScreen authSession={authSession} venueId={openVenueId} />
                     </SafeAreaView>
                 </SwipeBackGestureView>
             );

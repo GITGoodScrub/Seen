@@ -8,6 +8,7 @@ type PostCardProps = {
     authorPhotoUrl?: string | null;
     postImageUrl?: string | null;
     onDelete?: () => void;
+    onEdit?: () => void;
     likeCount?: number;
     isLikedByCurrentUser?: boolean;
     commentCount?: number;
@@ -23,6 +24,7 @@ export const PostCard = (
         authorPhotoUrl,
         postImageUrl,
         onDelete,
+        onEdit,
         likeCount = 0,
         isLikedByCurrentUser = false,
         commentCount = 0,
@@ -56,16 +58,23 @@ export const PostCard = (
         );
     })();
 
-    const handleDeletePress = (): void =>
+    const handleMenuPress = (): void =>
     {
-        Alert.alert(
-            "Delete post",
-            "Are you sure you want to delete this post?",
-            [
-                { text: "Cancel", style: "cancel" },
-                { text: "Delete", style: "destructive", onPress: onDelete },
-            ],
-        );
+        const buttons: Parameters<typeof Alert.alert>[2] = [];
+
+        if (onEdit)
+        {
+            buttons.push({ text: "Edit", onPress: onEdit });
+        }
+
+        if (onDelete)
+        {
+            buttons.push({ text: "Delete", style: "destructive", onPress: onDelete });
+        }
+
+        buttons.push({ text: "Cancel", style: "cancel" });
+
+        Alert.alert("Post actions", undefined, buttons);
     };
 
     return (
@@ -86,12 +95,12 @@ export const PostCard = (
                     </View>
                 </View>
 
-                {onDelete && (
+                {(onDelete || onEdit) && (
                     <Pressable
-                        style={styles.deleteButton}
-                        onPress={handleDeletePress}
+                        style={styles.menuButton}
+                        onPress={handleMenuPress}
                     >
-                        <Text style={styles.deleteButtonLabel}>Delete</Text>
+                        <Ionicons name="ellipsis-horizontal" size={18} color="#64748b" />
                     </Pressable>
                 )}
             </View>
@@ -155,16 +164,11 @@ const styles = StyleSheet.create(
         alignItems: "center",
         flex: 1,
     },
-    deleteButton:
+    menuButton:
     {
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-    },
-    deleteButtonLabel:
-    {
-        fontSize: 13,
-        color: "#ef4444",
-        fontWeight: "600",
+        paddingHorizontal: 2,
+        paddingVertical: 2,
+        marginTop: -2,
     },
     avatarPlaceholder:
     {
