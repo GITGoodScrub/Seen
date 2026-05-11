@@ -1,7 +1,9 @@
+import * as Calendar from "expo-calendar";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
     ActivityIndicator,
     Alert,
+    Platform,
     Pressable,
     RefreshControl,
     ScrollView,
@@ -79,6 +81,58 @@ const reviewVisibilityOptions = [
 ] as const;
 
 type ReviewVisibilityValue = (typeof reviewVisibilityOptions)[number]["value"];
+
+const addOccurrenceToCalendar = async (
+    occurrence: EventOccurrenceDetail,
+    seriesTitle: string,
+    venueName: string,
+): Promise<void> =>
+{
+    const { status } = await Calendar.requestCalendarPermissionsAsync();
+
+    if (status !== "granted")
+    {
+        Alert.alert("Permission denied", "Calendar access is required to add show times.");
+        return;
+    }
+
+    const calendars = await Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT);
+
+    let calendarId: string | undefined;
+
+    if (Platform.OS === "ios")
+    {
+        const writable = calendars.find((cal) => cal.allowsModifications);
+        calendarId = writable?.id ?? calendars[0]?.id;
+    }
+    else
+    {
+        const primary = calendars.find((cal) => cal.isPrimary);
+        calendarId = primary?.id ?? calendars[0]?.id;
+    }
+
+    if (!calendarId)
+    {
+        Alert.alert("No calendar found", "Could not find a calendar to add the event to.");
+        return;
+    }
+
+    const startDate = new Date(occurrence.startTime);
+    const endDate = new Date(
+        startDate.getTime() + (occurrence.durationMinutes ?? 120) * 60000,
+    );
+    const title = occurrence.title?.trim() || seriesTitle;
+
+    await Calendar.createEventAsync(calendarId, {
+        title,
+        startDate,
+        endDate,
+        location: venueName,
+        notes: title !== seriesTitle ? seriesTitle : undefined,
+    });
+
+    Alert.alert("Added to calendar", `"${title}" has been added to your calendar.`);
+};
 
 export const EventDetailScreen = (
     {
@@ -588,6 +642,19 @@ export const EventDetailScreen = (
                                     Lineup: {occurrence.artists.map((artist) => artist.name).join(", ")}
                                 </Text>
                             ) : null}
+                            <Pressable
+                                style={styles.addToCalendarButton}
+                                onPress={() =>
+                                {
+                                    void addOccurrenceToCalendar(
+                                        occurrence,
+                                        eventDetail.title,
+                                        eventDetail.venueName,
+                                    );
+                                }}
+                            >
+                                <Text style={styles.addToCalendarButtonText}>Add to Calendar</Text>
+                            </Pressable>
                         </View>
                     ))
                 )}
@@ -822,5 +889,18 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: "#ef4444",
         textAlign: "center",
+    },
+    addToCalendarButton: {
+        alignSelf: "flex-start",
+        marginTop: 8,
+        borderRadius: 8,
+        backgroundColor: "#6366f1",
+        paddingHorizontal: 12,
+        paddingVertical: 7,
+    },
+    addToCalendarButtonText: {
+        color: "#ffffff",
+        fontWeight: "700",
+        fontSize: 13,
     },
 });

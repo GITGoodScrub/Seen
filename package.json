@@ -16,6 +16,7 @@
     "@react-native-community/datetimepicker": "8.4.4",
     "expo": "~54.0.33",
     "expo-auth-session": "~7.0.10",
+    "expo-calendar": "^55.0.14",
     "expo-constants": "^55.0.9",
     "expo-image-picker": "~17.0.10",
     "expo-status-bar": "~3.0.9",
