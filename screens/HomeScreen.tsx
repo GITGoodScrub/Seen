@@ -2,11 +2,13 @@ import { useCallback, useEffect, useState } from "react";
 import {
     ActivityIndicator,
     Alert,
+    Modal,
     Pressable,
     RefreshControl,
     ScrollView,
     StyleSheet,
     Text,
+    TextInput,
     View,
 } from "react-native";
 import { CommentsSheet, FeedSearchBar, PostCard } from "../components";
@@ -17,6 +19,7 @@ import {
     getErrorMessageFromUnknown,
     loadFeedPosts,
     togglePostLike,
+    updatePost,
 } from "../Services";
 
 type HomeScreenProps = {
@@ -38,6 +41,9 @@ export const HomeScreen = (
     const [isRefreshing, setIsRefreshing] = useState(refreshKey > 0);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [openCommentsForPostId, setOpenCommentsForPostId] = useState<number | null>(null);
+    const [editingPostId, setEditingPostId] = useState<number | null>(null);
+    const [editingPostText, setEditingPostText] = useState("");
+    const [isSavingEdit, setIsSavingEdit] = useState(false);
 
     const loadPosts = useCallback(
         async (isRefresh = false): Promise<void> =>
@@ -143,6 +149,39 @@ export const HomeScreen = (
         [loadPosts],
     );
 
+    const handleSaveEdit = async (): Promise<void> =>
+    {
+        if (editingPostId === null) return;
+
+        const trimmedText = editingPostText.trim();
+        if (trimmedText.length === 0)
+        {
+            Alert.alert("Empty post", "Post text cannot be empty.");
+            return;
+        }
+
+        setIsSavingEdit(true);
+
+        try
+        {
+            await updatePost(editingPostId, trimmedText);
+            setFeedPosts((current) =>
+                current.map((p) =>
+                    p.id === editingPostId ? { ...p, text: trimmedText } : p,
+                ),
+            );
+            setEditingPostId(null);
+        }
+        catch (caughtError)
+        {
+            Alert.alert("Error", getErrorMessageFromUnknown(caughtError));
+        }
+        finally
+        {
+            setIsSavingEdit(false);
+        }
+    };
+
     const fallbackAuthor = authSession.user.username ? `@${authSession.user.username}` : "You";
 
     return (
@@ -208,6 +247,14 @@ export const HomeScreen = (
                                 }
                                 : undefined;
 
+                            const handleEdit = isOwnPost
+                                ? (): void =>
+                                {
+                                    setEditingPostId(post.id);
+                                    setEditingPostText(post.text);
+                                }
+                                : undefined;
+
                             return (
                                 <PostCard
                                     key={post.id}
@@ -217,6 +264,7 @@ export const HomeScreen = (
                                     authorPhotoUrl={post.authorProfilePhoto}
                                     postImageUrl={post.photoURL}
                                     onDelete={handleDelete}
+                                    onEdit={handleEdit}
                                     likeCount={post.likeCount}
                                     isLikedByCurrentUser={post.isLikedByCurrentUser}
                                     commentCount={post.commentCount}
@@ -242,6 +290,45 @@ export const HomeScreen = (
                 }}
                 onCommentAdded={handleCommentAdded}
             />
+
+            <Modal
+                visible={editingPostId !== null}
+                transparent={true}
+                animationType="fade"
+                onRequestClose={() => { setEditingPostId(null); }}
+            >
+                <View style={styles.editModalOverlay}>
+                    <View style={styles.editModalCard}>
+                        <Text style={styles.editModalTitle}>Edit post</Text>
+                        <TextInput
+                            value={editingPostText}
+                            onChangeText={setEditingPostText}
+                            editable={!isSavingEdit}
+                            multiline={true}
+                            style={styles.editModalInput}
+                            autoFocus={true}
+                        />
+                        <View style={styles.editModalButtons}>
+                            <Pressable
+                                style={[styles.editModalButton, styles.editModalCancelButton]}
+                                onPress={() => { setEditingPostId(null); }}
+                                disabled={isSavingEdit}
+                            >
+                                <Text style={styles.editModalCancelText}>Cancel</Text>
+                            </Pressable>
+                            <Pressable
+                                style={[styles.editModalButton, styles.editModalSaveButton]}
+                                onPress={() => { void handleSaveEdit(); }}
+                                disabled={isSavingEdit}
+                            >
+                                <Text style={styles.editModalSaveText}>
+                                    {isSavingEdit ? "Saving..." : "Save"}
+                                </Text>
+                            </Pressable>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 };
@@ -314,5 +401,72 @@ const styles = StyleSheet.create(
         fontSize: 13,
         fontWeight: "700",
         color: "#1d4ed8",
+    },
+    editModalOverlay:
+    {
+        flex: 1,
+        backgroundColor: "rgba(0,0,0,0.45)",
+        justifyContent: "center",
+        alignItems: "center",
+        padding: 24,
+    },
+    editModalCard:
+    {
+        backgroundColor: "#ffffff",
+        borderRadius: 16,
+        padding: 20,
+        width: "100%",
+    },
+    editModalTitle:
+    {
+        fontSize: 16,
+        fontWeight: "700",
+        color: "#0f172a",
+        marginBottom: 12,
+    },
+    editModalInput:
+    {
+        borderWidth: 1,
+        borderColor: "#cbd5e1",
+        borderRadius: 10,
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        fontSize: 14,
+        color: "#0f172a",
+        minHeight: 90,
+        textAlignVertical: "top",
+    },
+    editModalButtons:
+    {
+        flexDirection: "row",
+        gap: 10,
+        marginTop: 14,
+    },
+    editModalButton:
+    {
+        flex: 1,
+        paddingVertical: 10,
+        borderRadius: 10,
+        alignItems: "center",
+    },
+    editModalCancelButton:
+    {
+        backgroundColor: "#f1f5f9",
+    },
+    editModalSaveButton:
+    {
+        backgroundColor: "#6366f1",
+    },
+    editModalCancelText:
+    {
+        fontSize: 14,
+        fontWeight: "600",
+        color: "#475569",
+    },
+    editModalSaveText:
+    {
+        fontSize: 14,
+        fontWeight: "600",
+        color: "#ffffff",
     },
 });

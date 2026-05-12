@@ -1,9 +1,10 @@
 import { AppTabKey } from "./appShellTypes";
 
-export type SideMenuItemKey = AppTabKey | "settings" | "help" | "logout";
+export type SideMenuItemKey = AppTabKey | "followers" | "settings" | "logout";
 
 export type SideMenuItem = {
     key: SideMenuItemKey;
     label: string;
     description?: string;
+    isDanger?: boolean;
 };

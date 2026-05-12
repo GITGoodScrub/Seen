@@ -12,6 +12,7 @@ import {
     EventSeriesFeedResponse,
     EventSeriesItem,
     UpdateEventSeriesRequest,
+    UpdateSeriesReviewRequest,
 } from "./eventTypes";
 
 const eventSeriesRoute = "/api/eventSeries";
@@ -281,6 +282,32 @@ export const createSeriesReview = async (
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(request),
+        },
+    );
+};
+
+export const updateSeriesReview = async (
+    request: UpdateSeriesReviewRequest,
+): Promise<void> =>
+{
+    await requestJsonWithFailover<{ seriesReview: unknown }>(
+        seriesReviewsRoute,
+        {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(request),
+        },
+    );
+};
+
+export const deleteSeriesReview = async (reviewId: number): Promise<void> =>
+{
+    await requestJsonWithFailover<{ message?: string }>(
+        seriesReviewsRoute,
+        {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ reviewId }),
         },
     );
 };

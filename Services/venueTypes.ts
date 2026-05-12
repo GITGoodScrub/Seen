@@ -1,9 +1,10 @@
 export type VenueReviewItem = {
     reviewId: number;
+    userId: number;
     username: string | null;
     rating: number;
     text: string;
-    visibility: string;
+    visibility: "public" | "followersOnly" | "friendsOnly" | "private";
     createdAt: string;
 };
 
@@ -37,5 +38,12 @@ export type CreateVenueReviewRequest = {
     venueId: number;
     rating: number;
     text: string;
-    visibility: string;
+    visibility: "public" | "followersOnly" | "private";
+};
+
+export type UpdateVenueReviewRequest = {
+    reviewId: number;
+    rating: number;
+    text: string;
+    visibility: "public" | "followersOnly" | "private";
 };

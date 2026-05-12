@@ -6,6 +6,7 @@ import {
     Easing,
     FlatList,
     Image,
+    Modal,
     Pressable,
     ScrollView,
     Switch,
@@ -14,9 +15,14 @@ import {
     TextInput,
     View,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
+import { SelectDropdown } from "../components/Inputs/SelectDropdown";
 import {
     AuthSession,
+    deletePost,
+    deleteSeriesReview,
+    deleteVenueReview,
     EventReminderSettings,
     FollowListType,
     FollowUser,
@@ -36,17 +42,29 @@ import {
     saveMyProfile,
     setCurrentUsername,
     toggleFollowUser,
+    updatePost,
+    updateSeriesReview,
+    updateVenueReview,
 } from "../Services";
 
 type ProfileScreenProps = {
     authSession: AuthSession;
     profileUserId?: number | null;
     isEditing?: boolean;
+    openFollowListRequest?: number;
     onOpenProfilePress?: (profileUserId: number) => void;
     onStartEditing?: () => void;
     onStopEditing?: () => void;
     onSessionUpdate?: (nextSession: AuthSession) => void;
 };
+
+type ReviewVisibilityValue = "public" | "followersOnly" | "private";
+
+const reviewVisibilityOptions = [
+    { label: "Everyone", value: "public" },
+    { label: "Followers", value: "followersOnly" },
+    { label: "Only me", value: "private" },
+] as const;
 
 const safeString = (value: string | null | undefined): string =>
 {
@@ -99,6 +117,7 @@ export const ProfileScreen = (
         authSession,
         profileUserId,
         isEditing = false,
+        openFollowListRequest = 0,
         onOpenProfilePress,
         onStartEditing,
         onStopEditing,
@@ -119,6 +138,7 @@ export const ProfileScreen = (
     const [followingCount, setFollowingCount] = useState(0);
     const [activeFollowListType, setActiveFollowListType] = useState<FollowListType>("followers");
     const [isFollowListVisible, setIsFollowListVisible] = useState(false);
+    const prevOpenFollowListRequestRef = useRef(0);
     const [isFollowListLoading, setIsFollowListLoading] = useState(false);
     const [followListErrorMessage, setFollowListErrorMessage] = useState<string | null>(null);
     const [followListUsers, setFollowListUsers] = useState<FollowUser[]>([]);
@@ -143,6 +163,11 @@ export const ProfileScreen = (
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
     const [followErrorMessage, setFollowErrorMessage] = useState<string | null>(null);
+    const [editingActivity, setEditingActivity] = useState<ProfileActivityItem | null>(null);
+    const [editingActivityText, setEditingActivityText] = useState("");
+    const [editingActivityRating, setEditingActivityRating] = useState(5);
+    const [editingActivityVisibility, setEditingActivityVisibility] = useState<ReviewVisibilityValue>("public");
+    const [isSavingActivityEdit, setIsSavingActivityEdit] = useState(false);
     const selectedUserId = profileUserId ?? authSession.user.id;
     const isOwnProfile = selectedUserId === authSession.user.id;
     const isInEditMode = isOwnProfile && isEditing;
@@ -419,6 +444,19 @@ export const ProfileScreen = (
             setIsFollowListLoading(false);
         }
     };
+
+    useEffect(
+        () =>
+        {
+            if (openFollowListRequest > 0 && openFollowListRequest !== prevOpenFollowListRequestRef.current)
+            {
+                prevOpenFollowListRequestRef.current = openFollowListRequest;
+                handleOpenFollowList("followers");
+            }
+        },
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [openFollowListRequest],
+    );
 
     const handleOpenFollowList = (listType: FollowListType): void =>
     {
@@ -736,6 +774,177 @@ export const ProfileScreen = (
         finally
         {
             setIsSaving(false);
+        }
+    };
+
+    const getActivityNumericId = (activityItem: ProfileActivityItem): number | null =>
+    {
+        const parts = activityItem.id.split("-");
+        const rawId = parts[parts.length - 1] ?? "";
+        const parsedId = Number.parseInt(rawId, 10);
+        return Number.isNaN(parsedId) ? null : parsedId;
+    };
+
+    const handleOpenActivityEdit = (activityItem: ProfileActivityItem): void =>
+    {
+        setEditingActivity(activityItem);
+        setEditingActivityText(activityItem.text);
+        setEditingActivityRating(activityItem.rating ?? 5);
+        setEditingActivityVisibility("public");
+    };
+
+    const handleDeleteActivity = (activityItem: ProfileActivityItem): void =>
+    {
+        const entityId = getActivityNumericId(activityItem);
+
+        if (entityId === null)
+        {
+            Alert.alert("Error", "Could not identify this activity item.");
+            return;
+        }
+
+        Alert.alert(
+            "Delete item",
+            "Are you sure you want to delete this item?",
+            [
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "Delete",
+                    style: "destructive",
+                    onPress: () =>
+                    {
+                        const previousActivity = profileActivity;
+                        setProfileActivity((current) => current.filter((entry) => entry.id !== activityItem.id));
+
+                        void (async () =>
+                        {
+                            try
+                            {
+                                if (activityItem.type === "post")
+                                {
+                                    await deletePost(entityId);
+                                }
+                                else if (activityItem.type === "seriesReview")
+                                {
+                                    await deleteSeriesReview(entityId);
+                                }
+                                else
+                                {
+                                    await deleteVenueReview(entityId);
+                                }
+                            }
+                            catch (caughtError)
+                            {
+                                setProfileActivity(previousActivity);
+                                Alert.alert("Delete failed", getErrorMessageFromUnknown(caughtError));
+                            }
+                        })();
+                    },
+                },
+            ],
+        );
+    };
+
+    const handleActivityMenuPress = (activityItem: ProfileActivityItem): void =>
+    {
+        Alert.alert(
+            "Activity actions",
+            undefined,
+            [
+                {
+                    text: "Edit",
+                    onPress: () => handleOpenActivityEdit(activityItem),
+                },
+                {
+                    text: "Delete",
+                    style: "destructive",
+                    onPress: () => handleDeleteActivity(activityItem),
+                },
+                { text: "Cancel", style: "cancel" },
+            ],
+        );
+    };
+
+    const handleSaveActivityEdit = async (): Promise<void> =>
+    {
+        if (!editingActivity)
+        {
+            return;
+        }
+
+        const entityId = getActivityNumericId(editingActivity);
+        if (entityId === null)
+        {
+            Alert.alert("Error", "Could not identify this activity item.");
+            return;
+        }
+
+        const trimmedText = editingActivityText.trim();
+        if (trimmedText.length === 0)
+        {
+            Alert.alert("Error", "Text cannot be empty.");
+            return;
+        }
+
+        setIsSavingActivityEdit(true);
+
+        try
+        {
+            if (editingActivity.type === "post")
+            {
+                await updatePost(entityId, trimmedText);
+            }
+            else if (editingActivity.type === "seriesReview")
+            {
+                await updateSeriesReview(
+                    {
+                        reviewId: entityId,
+                        rating: editingActivityRating,
+                        text: trimmedText,
+                        visibility: editingActivityVisibility,
+                    },
+                );
+            }
+            else
+            {
+                await updateVenueReview(
+                    {
+                        reviewId: entityId,
+                        rating: editingActivityRating,
+                        text: trimmedText,
+                        visibility: editingActivityVisibility,
+                    },
+                );
+            }
+
+            setProfileActivity((current) =>
+                current.map(
+                    (entry) =>
+                    {
+                        if (entry.id !== editingActivity.id)
+                        {
+                            return entry;
+                        }
+
+                        return {
+                            ...entry,
+                            text: trimmedText,
+                            rating: entry.type === "post" ? null : editingActivityRating,
+                        };
+                    },
+                ),
+            );
+
+            setEditingActivity(null);
+            setEditingActivityText("");
+        }
+        catch (caughtError)
+        {
+            Alert.alert("Save failed", getErrorMessageFromUnknown(caughtError));
+        }
+        finally
+        {
+            setIsSavingActivityEdit(false);
         }
     };
 
@@ -1059,32 +1268,138 @@ export const ProfileScreen = (
                 )}
             </View>
 
-            <View style={styles.panel}>
-                <Text style={styles.sectionTitle}>Posts & Reviews</Text>
-                {profileActivity.length === 0 ? (
-                    <Text style={styles.readOnlyValue}>No activity yet.</Text>
-                ) : (
-                    profileActivity.map((activityItem) => (
-                        <View key={activityItem.id} style={styles.activityRow}>
-                            <Text style={styles.activityMetaText}>
-                                {getActivityTypeLabel(activityItem.type)}
-                                {" · "}
-                                {formatActivityDate(activityItem.createdAt)}
-                            </Text>
-                            {activityItem.targetName ? (
-                                <Text style={styles.activityTargetName}>{activityItem.targetName}</Text>
-                            ) : null}
-                            {activityItem.rating !== null ? (
-                                <Text style={styles.activityRatingText}>
-                                    {activityItem.rating}/5 {getStars(activityItem.rating)}
-                                </Text>
-                            ) : null}
-                            <Text style={styles.readOnlyValue}>{activityItem.text}</Text>
-                        </View>
-                    ))
-                )}
-            </View>
+            {!isInEditMode ? (
+                <View style={styles.panel}>
+                    <Text style={styles.sectionTitle}>Posts & Reviews</Text>
+                    {profileActivity.length === 0 ? (
+                        <Text style={styles.readOnlyValue}>No activity yet.</Text>
+                    ) : (
+                        profileActivity.map((activityItem) => (
+                            <View key={activityItem.id} style={styles.activityRow}>
+                                <View style={styles.activityHeaderRow}>
+                                    <Text style={styles.activityMetaText}>
+                                        {getActivityTypeLabel(activityItem.type)}
+                                        {" · "}
+                                        {formatActivityDate(activityItem.createdAt)}
+                                    </Text>
+                                    {isOwnProfile ? (
+                                        <Pressable
+                                            style={styles.activityMenuButton}
+                                            onPress={() => handleActivityMenuPress(activityItem)}
+                                        >
+                                            <Ionicons name="ellipsis-horizontal" size={18} color="#64748b" />
+                                        </Pressable>
+                                    ) : null}
+                                </View>
+                                {activityItem.targetName ? (
+                                    <Text style={styles.activityTargetName}>{activityItem.targetName}</Text>
+                                ) : null}
+                                {activityItem.rating !== null ? (
+                                    <Text style={styles.activityRatingText}>
+                                        {activityItem.rating}/5 {getStars(activityItem.rating)}
+                                    </Text>
+                                ) : null}
+                                <Text style={styles.readOnlyValue}>{activityItem.text}</Text>
+                            </View>
+                        ))
+                    )}
+                </View>
+            ) : null}
             </ScrollView>
+
+            <Modal
+                visible={editingActivity !== null}
+                transparent={true}
+                animationType="fade"
+                onRequestClose={() =>
+                {
+                    if (!isSavingActivityEdit)
+                    {
+                        setEditingActivity(null);
+                    }
+                }}
+            >
+                <View style={styles.editModalOverlay}>
+                    <View style={styles.editModalCard}>
+                        <Text style={styles.editModalTitle}>
+                            {editingActivity?.type === "post" ? "Edit post" : "Edit review"}
+                        </Text>
+
+                        {editingActivity && editingActivity.type !== "post" ? (
+                            <>
+                                <View style={styles.editReviewStarsRow}>
+                                    {[1, 2, 3, 4, 5].map((value) => (
+                                        <Pressable
+                                            key={value}
+                                            style={styles.editReviewStarButton}
+                                            onPress={() => setEditingActivityRating(value)}
+                                            disabled={isSavingActivityEdit}
+                                        >
+                                            <Text
+                                                style={[
+                                                    styles.editReviewStar,
+                                                    value <= editingActivityRating ? styles.editReviewStarActive : null,
+                                                ]}
+                                            >
+                                                ★
+                                            </Text>
+                                        </Pressable>
+                                    ))}
+                                </View>
+
+                                <SelectDropdown
+                                    options={[...reviewVisibilityOptions]}
+                                    selectedValue={editingActivityVisibility}
+                                    onValueChange={(nextValue) =>
+                                    {
+                                        setEditingActivityVisibility(nextValue as ReviewVisibilityValue);
+                                    }}
+                                />
+                            </>
+                        ) : null}
+
+                        <TextInput
+                            value={editingActivityText}
+                            onChangeText={setEditingActivityText}
+                            multiline={true}
+                            editable={!isSavingActivityEdit}
+                            style={styles.editModalInput}
+                        />
+
+                        <View style={styles.editModalButtonRow}>
+                            <Pressable
+                                style={[styles.secondaryButton, styles.editModalButtonHalf]}
+                                disabled={isSavingActivityEdit}
+                                onPress={() =>
+                                {
+                                    setEditingActivity(null);
+                                }}
+                            >
+                                <Text style={styles.secondaryButtonText}>Cancel</Text>
+                            </Pressable>
+
+                            <Pressable
+                                style={[
+                                    styles.saveButton,
+                                    styles.editModalButtonHalf,
+                                    isSavingActivityEdit ? styles.saveButtonDisabled : null,
+                                ]}
+                                disabled={isSavingActivityEdit}
+                                onPress={() =>
+                                {
+                                    void handleSaveActivityEdit();
+                                }}
+                            >
+                                {isSavingActivityEdit ? (
+                                    <ActivityIndicator color="#ffffff" />
+                                ) : (
+                                    <Text style={styles.saveButtonText}>Save</Text>
+                                )}
+                            </Pressable>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
 
             {isFollowListVisible ? (
                 <>
@@ -1645,11 +1960,25 @@ const styles = StyleSheet.create(
         paddingTop: 10,
         marginTop: 10,
     },
+    activityHeaderRow:
+    {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 2,
+    },
+    activityMenuButton:
+    {
+        width: 28,
+        minHeight: 28,
+        justifyContent: "center",
+        alignItems: "center",
+        borderRadius: 14,
+    },
     activityMetaText:
     {
         fontSize: 12,
         color: "#64748b",
-        marginBottom: 4,
     },
     activityTargetName:
     {
@@ -1773,5 +2102,74 @@ const styles = StyleSheet.create(
         color: "#ffffff",
         fontSize: 15,
         fontWeight: "700",
+    },
+    editModalOverlay:
+    {
+        flex: 1,
+        backgroundColor: "rgba(15,23,42,0.45)",
+        justifyContent: "center",
+        alignItems: "center",
+        paddingHorizontal: 20,
+    },
+    editModalCard:
+    {
+        width: "100%",
+        backgroundColor: "#ffffff",
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: "#e2e8f0",
+        padding: 16,
+    },
+    editModalTitle:
+    {
+        fontSize: 16,
+        fontWeight: "700",
+        color: "#0f172a",
+        marginBottom: 10,
+    },
+    editModalInput:
+    {
+        minHeight: 110,
+        borderWidth: 1,
+        borderColor: "#d4dce8",
+        borderRadius: 10,
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        textAlignVertical: "top",
+        backgroundColor: "#f8fafc",
+        color: "#0f172a",
+        fontSize: 14,
+        marginTop: 10,
+    },
+    editModalButtonRow:
+    {
+        flexDirection: "row",
+        columnGap: 10,
+        marginTop: 12,
+    },
+    editModalButtonHalf:
+    {
+        flex: 1,
+    },
+    editReviewStarsRow:
+    {
+        flexDirection: "row",
+        marginBottom: 10,
+    },
+    editReviewStarButton:
+    {
+        marginRight: 6,
+        minHeight: 32,
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    editReviewStar:
+    {
+        fontSize: 24,
+        color: "#cbd5e1",
+    },
+    editReviewStarActive:
+    {
+        color: "#f59e0b",
     },
 });

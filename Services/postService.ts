@@ -156,6 +156,18 @@ export const deletePost = async (postId: number): Promise<void> =>
     );
 };
 
+export const updatePost = async (postId: number, text: string): Promise<void> =>
+{
+    await requestJsonWithFailover<Record<string, never>>(
+        postByIdRoute(postId),
+        {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text }),
+        },
+    );
+};
+
 export const togglePostLike = async (postId: number): Promise<boolean> =>
 {
     const response = await requestJsonWithFailover<ToggleLikeResponse>(

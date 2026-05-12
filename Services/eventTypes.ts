@@ -45,10 +45,11 @@ export type EventOccurrenceDetail = {
 
 export type EventSeriesReviewItem = {
     reviewId: number;
+    userId: number;
     username: string | null;
     rating: number;
     text: string;
-    visibility: string;
+    visibility: "public" | "followersOnly" | "friendsOnly" | "private";
     createdAt: string;
 };
 
@@ -134,5 +135,12 @@ export type CreateSeriesReviewRequest = {
     seriesId: number;
     rating: number;
     text: string;
-    visibility: "public" | "friendsOnly" | "private";
+    visibility: "public" | "followersOnly" | "private";
+};
+
+export type UpdateSeriesReviewRequest = {
+    reviewId: number;
+    rating: number;
+    text: string;
+    visibility: "public" | "followersOnly" | "private";
 };

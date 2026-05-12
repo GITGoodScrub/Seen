@@ -2,19 +2,19 @@ import { SideMenuItem } from "./sideMenuTypes";
 
 const sideMenuItems: SideMenuItem[] = [
     {
-        key: "home",
-        label: "Home",
-        description: "Main feed and updates",
-    },
-    {
         key: "discover",
-        label: "Discover",
-        description: "Find people, venues, and events",
+        label: "Events",
+        description: "Discover events happening near you",
     },
     {
         key: "saved",
-        label: "Saved Events",
+        label: "Saved",
         description: "Your bookmarked events",
+    },
+    {
+        key: "followers",
+        label: "Friends",
+        description: "Your followers & following",
     },
     {
         key: "notifications",
@@ -32,14 +32,9 @@ const sideMenuItems: SideMenuItem[] = [
         description: "Preferences and account options",
     },
     {
-        key: "help",
-        label: "Help",
-        description: "Support and documentation",
-    },
-    {
         key: "logout",
         label: "Log Out",
-        description: "Sign out of your account",
+        isDanger: true,
     },
 ];
 
