@@ -61,9 +61,8 @@ EXPO_PUBLIC_DEV_AUTH_BYPASS=false
 ### 3. Start the app
 
 ```bash
-npm start          # opens Expo dev menu
-npm run android    # runs on Android emulator / device
-npm run ios        # runs on iOS simulator (Mac only)
+npx expo start          # opens Expo dev menu (do this from Seen folder)
+Scan the QR code        # Might need to download the expo app
 ```
 
 ### 4. Start the backend (optional, for local development)
