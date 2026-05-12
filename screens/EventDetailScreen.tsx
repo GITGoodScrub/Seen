@@ -133,7 +133,6 @@ const addOccurrenceToCalendar = async (
 
     Alert.alert("Added to calendar", `"${title}" has been added to your calendar.`);
 };
-
 export const EventDetailScreen = (
     {
         eventSeriesId,
