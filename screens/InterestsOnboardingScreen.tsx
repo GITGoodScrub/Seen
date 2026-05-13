@@ -16,6 +16,7 @@ import {
     saveUserInterests,
     skipInterestsOnboarding,
     toggleFollowUser,
+    useDarkMode,
 } from "../Services";
 
 type InterestsOnboardingScreenProps = {
@@ -39,12 +40,23 @@ const TagChip = (
         onPress: () => void;
     },
 ) => {
+    const { theme } = useDarkMode();
     return (
         <Pressable
-            style={[styles.tagChip, isSelected ? styles.tagChipSelected : null]}
+            style={[
+                styles.tagChip,
+                { borderColor: theme.borderLight, backgroundColor: theme.surface },
+                isSelected ? styles.tagChipSelected : null,
+                isSelected ? { borderColor: theme.primary, backgroundColor: theme.primaryLight } : null,
+            ]}
             onPress={onPress}
         >
-            <Text style={[styles.tagChipText, isSelected ? styles.tagChipTextSelected : null]}>
+            <Text style={[
+                styles.tagChipText,
+                { color: theme.text },
+                isSelected ? styles.tagChipTextSelected : null,
+                isSelected ? { color: theme.primary } : null,
+            ]}>
                 {tag.name}
             </Text>
         </Pressable>
@@ -59,6 +71,7 @@ export const InterestsOnboardingScreen = (
     }: InterestsOnboardingScreenProps,
 ) =>
 {
+    const { theme } = useDarkMode();
     const [step, setStep] = useState<StepKey>("genres");
     const [selectedTagIds, setSelectedTagIds] = useState<number[]>(setup.selectedTagIds);
     const [recommendedArtists, setRecommendedArtists] = useState<ArtistSuggestion[]>(setup.recommendedArtists);
@@ -169,8 +182,8 @@ export const InterestsOnboardingScreen = (
     {
         return (
             <>
-                <Text style={styles.title}>{title}</Text>
-                <Text style={styles.subtitle}>{subtitle}</Text>
+                <Text style={[styles.title, { color: theme.text }]}>{title}</Text>
+                <Text style={[styles.subtitle, { color: theme.textSecondary }]}>{subtitle}</Text>
 
                 <View style={styles.tagGrid}>
                     {tags.map(
@@ -186,25 +199,25 @@ export const InterestsOnboardingScreen = (
                 </View>
 
                 {tags.length === 0 ? (
-                    <View style={styles.emptyBox}>
-                        <Text style={styles.emptyText}>No options found yet. Tap continue to keep going.</Text>
+                    <View style={[styles.emptyBox, { borderColor: theme.border, backgroundColor: theme.surface }]}>
+                        <Text style={[styles.emptyText, { color: theme.textSecondary }]}>No options found yet. Tap continue to keep going.</Text>
                     </View>
                 ) : null}
 
                 <View style={styles.actionsRow}>
                     <Pressable
-                        style={[styles.secondaryButton, (isSaving || isSkipping) ? styles.disabledButton : null]}
+                        style={[styles.secondaryButton, { borderColor: theme.primary, backgroundColor: theme.primaryLight }, (isSaving || isSkipping) ? styles.disabledButton : null]}
                         disabled={isSaving || isSkipping}
                         onPress={() =>
                         {
                             void handleSkip();
                         }}
                     >
-                        {isSkipping ? <ActivityIndicator size="small" color="#1d4ed8" /> : <Text style={styles.secondaryButtonText}>Skip for now</Text>}
+                        {isSkipping ? <ActivityIndicator size="small" color={theme.primary} /> : <Text style={[styles.secondaryButtonText, { color: theme.primary }]}>Skip for now</Text>}
                     </Pressable>
 
                     <Pressable
-                        style={[styles.primaryButton, (isSaving || isSkipping) ? styles.disabledButton : null]}
+                        style={[styles.primaryButton, { backgroundColor: theme.primary }, (isSaving || isSkipping) ? styles.disabledButton : null]}
                         disabled={isSaving || isSkipping}
                         onPress={onContinue}
                     >
@@ -216,7 +229,7 @@ export const InterestsOnboardingScreen = (
     };
 
     return (
-        <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
+        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={["top", "bottom"]}>
             <ScrollView
                 contentContainerStyle={styles.content}
                 keyboardShouldPersistTaps="handled"
@@ -245,28 +258,28 @@ export const InterestsOnboardingScreen = (
 
                 {step === "artists" ? (
                     <>
-                        <Text style={styles.title}>You might want to follow</Text>
-                        <Text style={styles.subtitle}>Based on your interests, here are some artists to kick things off.</Text>
+                        <Text style={[styles.title, { color: theme.text }]}>You might want to follow</Text>
+                        <Text style={[styles.subtitle, { color: theme.textSecondary }]}>Based on your interests, here are some artists to kick things off.</Text>
 
                         {recommendedArtists.length === 0 ? (
-                            <View style={styles.emptyBox}>
-                                <Text style={styles.emptyText}>No suggestions yet. We will improve suggestions as more events are tagged.</Text>
+                            <View style={[styles.emptyBox, { borderColor: theme.border, backgroundColor: theme.surface }]}>
+                                <Text style={[styles.emptyText, { color: theme.textSecondary }]}>No suggestions yet. We will improve suggestions as more events are tagged.</Text>
                             </View>
                         ) : (
                             <View style={styles.artistList}>
                                 {recommendedArtists.map((artist) => (
-                                    <View key={artist.artistId} style={styles.artistRow}>
+                                    <View key={artist.artistId} style={[styles.artistRow, { borderColor: theme.border, backgroundColor: theme.surface }]}> 
                                         <View style={styles.artistInfo}>
                                             {artist.photo ? (
                                                 <Image source={{ uri: artist.photo }} style={styles.artistPhoto} />
                                             ) : (
-                                                <View style={styles.artistPhotoPlaceholder}>
-                                                    <Text style={styles.artistInitials}>{artist.name.slice(0, 2).toUpperCase()}</Text>
+                                                <View style={[styles.artistPhotoPlaceholder, { backgroundColor: theme.surfaceSecondary }]}> 
+                                                    <Text style={[styles.artistInitials, { color: theme.text }]}>{artist.name.slice(0, 2).toUpperCase()}</Text>
                                                 </View>
                                             )}
                                             <View>
-                                                <Text style={styles.artistName}>{artist.name}</Text>
-                                                <Text style={styles.artistMeta}>{artist.username ? `@${artist.username}` : "Artist"}</Text>
+                                                <Text style={[styles.artistName, { color: theme.text }]}>{artist.name}</Text>
+                                                <Text style={[styles.artistMeta, { color: theme.textSecondary }]}>{artist.username ? `@${artist.username}` : "Artist"}</Text>
                                             </View>
                                         </View>
 
@@ -283,14 +296,14 @@ export const InterestsOnboardingScreen = (
 
                         <View style={styles.actionsRow}>
                             <Pressable
-                                style={styles.secondaryButton}
+                                style={[styles.secondaryButton, { borderColor: theme.primary, backgroundColor: theme.primaryLight }]}
                                 onPress={() => setStep("event-types")}
                             >
-                                <Text style={styles.secondaryButtonText}>Back</Text>
+                                <Text style={[styles.secondaryButtonText, { color: theme.primary }]}>Back</Text>
                             </Pressable>
 
                             <Pressable
-                                style={styles.primaryButton}
+                                style={[styles.primaryButton, { backgroundColor: theme.primary }]}
                                 onPress={onComplete}
                             >
                                 <Text style={styles.primaryButtonText}>Finish</Text>

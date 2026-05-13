@@ -8,10 +8,11 @@ import {
     View,
 } from "react-native";
 import { RequestErrorState, UserListItem } from "../components";
-import { loadUsers, UserItem } from "../Services";
+import { loadUsers, UserItem, useDarkMode } from "../Services";
 
 export const UsersScreen = () =>
 {
+    const { theme } = useDarkMode();
     const [users, setUsers] = useState<UserItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
@@ -103,8 +104,8 @@ export const UsersScreen = () =>
     if (isLoading && users.length === 0)
     {
         return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" />
+            <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}> 
+                <ActivityIndicator size="large" color={theme.primary} />
             </View>
         );
     }
@@ -122,7 +123,7 @@ export const UsersScreen = () =>
     }
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: theme.background }]}> 
             <FlatList
                 data={users}
                 keyExtractor={(item) => item.id.toString()}
@@ -134,17 +135,20 @@ export const UsersScreen = () =>
                     <RefreshControl
                         refreshing={isRefreshing}
                         onRefresh={handleRefresh}
+                        tintColor={theme.primary}
+                        colors={[theme.primary]}
+                        progressBackgroundColor={theme.surface}
                     />
                 }
                 ListHeaderComponent={
                     errorMessage ? (
-                        <Text style={styles.warningText}>
+                        <Text style={[styles.warningText, { color: theme.warning, backgroundColor: theme.surfaceSecondary, borderColor: theme.warning }]}> 
                             Showing last loaded users. Refresh failed: {errorMessage}
                         </Text>
                     ) : null
                 }
                 ListEmptyComponent={
-                    <Text style={styles.emptyText}>No users available.</Text>
+                    <Text style={[styles.emptyText, { color: theme.textSecondary }]}>No users available.</Text>
                 }
             />
         </View>

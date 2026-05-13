@@ -21,6 +21,7 @@ import {
     getErrorMessageFromUnknown,
     loadVenueDetail,
     updateVenueReview,
+    useDarkMode,
 } from "../Services";
 
 type VenueDetailScreenProps = {
@@ -54,6 +55,7 @@ type ReviewVisibilityValue = (typeof reviewVisibilityOptions)[number]["value"];
 
 export const VenueDetailScreen = ({ authSession, venueId }: VenueDetailScreenProps) =>
 {
+    const { theme } = useDarkMode();
     const [venue, setVenue] = useState<VenueDetail | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
@@ -258,8 +260,8 @@ export const VenueDetailScreen = ({ authSession, venueId }: VenueDetailScreenPro
     if (isLoading)
     {
         return (
-            <View style={styles.centered}>
-                <ActivityIndicator size="large" color="#6366f1" />
+            <View style={[styles.centered, { backgroundColor: theme.background }]}> 
+                <ActivityIndicator size="large" color={theme.primary} />
             </View>
         );
     }
@@ -267,7 +269,7 @@ export const VenueDetailScreen = ({ authSession, venueId }: VenueDetailScreenPro
     if (errorMessage)
     {
         return (
-            <View style={styles.centered}>
+            <View style={[styles.centered, { backgroundColor: theme.background }]}> 
                 <Text style={styles.errorText}>{errorMessage}</Text>
             </View>
         );
@@ -276,33 +278,36 @@ export const VenueDetailScreen = ({ authSession, venueId }: VenueDetailScreenPro
     if (!venue)
     {
         return (
-            <View style={styles.centered}>
-                <Text style={styles.emptyText}>Venue unavailable.</Text>
+            <View style={[styles.centered, { backgroundColor: theme.background }]}> 
+                <Text style={[styles.emptyText, { color: theme.textSecondary }]}>Venue unavailable.</Text>
             </View>
         );
     }
 
     return (
         <ScrollView
-            contentContainerStyle={styles.content}
+            contentContainerStyle={[styles.content, { backgroundColor: theme.background }]}
             refreshControl={
                 <RefreshControl
                     refreshing={isRefreshing}
                     onRefresh={() => { void loadDetail(true); }}
+                    tintColor={theme.primary}
+                    colors={[theme.primary]}
+                    progressBackgroundColor={theme.surface}
                 />
             }
         >
-            <View style={styles.card}>
+            <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}> 
                 {venue.photo ? (
                     <Image source={{ uri: venue.photo }} style={styles.photo} />
                 ) : (
-                    <View style={styles.photoPlaceholder}>
+                    <View style={[styles.photoPlaceholder, { backgroundColor: theme.surfaceSecondary }]}> 
                         <Text style={styles.photoPlaceholderText}>No image</Text>
                     </View>
                 )}
 
-                <Text style={styles.title}>{venue.name}</Text>
-                <Text style={styles.ratingText}>
+                <Text style={[styles.title, { color: theme.text }]}>{venue.name}</Text>
+                <Text style={[styles.ratingText, { color: theme.textSecondary }]}>
                     {venue.averageRating === null
                         ? "No ratings yet"
                         : `${venue.averageRating.toFixed(2)} / 5 (${venue.reviewCount} reviews)`}
@@ -310,11 +315,11 @@ export const VenueDetailScreen = ({ authSession, venueId }: VenueDetailScreenPro
                 {venue.averageRating !== null ? (
                     <Text style={styles.starText}>{getStars(venue.averageRating)}</Text>
                 ) : null}
-                <Text style={styles.bioText}>{venue.bio?.trim() || "No venue description yet."}</Text>
+                <Text style={[styles.bioText, { color: theme.text }]}>{venue.bio?.trim() || "No venue description yet."}</Text>
             </View>
 
-            <View style={styles.card}>
-                <Text style={styles.sectionTitle}>Reviews</Text>
+            <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}> 
+                <Text style={[styles.sectionTitle, { color: theme.text }]}>Reviews</Text>
                 <View style={styles.reviewComposer}>
                     <Text style={styles.reviewComposerTitle}>
                         {editingReviewId === null ? "Leave a review" : "Edit your review"}
@@ -407,14 +412,14 @@ export const VenueDetailScreen = ({ authSession, venueId }: VenueDetailScreenPro
                                 ) : null}
                             </View>
                             <Text style={styles.reviewStars}>{getStars(review.rating)}</Text>
-                            <Text style={styles.reviewText}>{review.text}</Text>
+                            <Text style={[styles.reviewText, { color: theme.text }]}>{review.text}</Text>
                         </View>
                     ))
                 )}
             </View>
 
-            <View style={styles.card}>
-                <Text style={styles.sectionTitle}>Upcoming Events</Text>
+            <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}> 
+                <Text style={[styles.sectionTitle, { color: theme.text }]}>Upcoming Events</Text>
                 {venue.upcomingEvents.length === 0 ? (
                     <Text style={styles.emptyText}>No upcoming events at this venue.</Text>
                 ) : (

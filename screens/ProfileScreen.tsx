@@ -173,7 +173,7 @@ export const ProfileScreen = (
     const selectedUserId = profileUserId ?? authSession.user.id;
     const isOwnProfile = selectedUserId === authSession.user.id;
     const isInEditMode = isOwnProfile && isEditing;
-    const { preference: darkModePreference, toggleDarkMode } = useDarkMode();
+    const { theme, preference: darkModePreference, toggleDarkMode } = useDarkMode();
     const followListPanelProgress = useRef(new Animated.Value(0)).current;
     const followTabIndicatorProgress = useRef(
         new Animated.Value(activeFollowListType === "followers" ? 0 : 1),
@@ -954,16 +954,16 @@ export const ProfileScreen = (
     if (isLoadingProfile)
     {
         return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" />
+            <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
+                <ActivityIndicator size="large" color={theme.primary} />
             </View>
         );
     }
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: theme.background }]}> 
             <ScrollView
-                style={styles.container}
+                style={[styles.container, { backgroundColor: theme.background }]}
                 contentContainerStyle={styles.content}
                 keyboardShouldPersistTaps="handled"
             >
@@ -978,8 +978,8 @@ export const ProfileScreen = (
                 )}
             </View>
 
-            <Text style={styles.title}>{isInEditMode ? "Edit Profile" : "Profile"}</Text>
-            <Text style={styles.meta}>
+            <Text style={[styles.title, { color: theme.text }]}>{isInEditMode ? "Edit Profile" : "Profile"}</Text>
+            <Text style={[styles.meta, { color: theme.textSecondary }]}>
                 {isInEditMode
                     ? "Update your public account details."
                     : (isOwnProfile ? "Your public account details." : "Public profile." )}
@@ -987,25 +987,25 @@ export const ProfileScreen = (
 
             <View style={styles.statsRow}>
                 <Pressable
-                    style={styles.statCard}
+                    style={[styles.statCard, { borderColor: theme.border, backgroundColor: theme.surface }]}
                     onPress={() =>
                     {
                         handleOpenFollowList("followers");
                     }}
                 >
-                    <Text style={styles.statCount}>{followersCount}</Text>
-                    <Text style={styles.statLabel}>Followers</Text>
+                    <Text style={[styles.statCount, { color: theme.text }]}>{followersCount}</Text>
+                    <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Followers</Text>
                 </Pressable>
 
                 <Pressable
-                    style={styles.statCard}
+                    style={[styles.statCard, { borderColor: theme.border, backgroundColor: theme.surface }]}
                     onPress={() =>
                     {
                         handleOpenFollowList("following");
                     }}
                 >
-                    <Text style={styles.statCount}>{followingCount}</Text>
-                    <Text style={styles.statLabel}>Following</Text>
+                    <Text style={[styles.statCount, { color: theme.text }]}>{followingCount}</Text>
+                    <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Following</Text>
                 </Pressable>
             </View>
 
@@ -1038,39 +1038,39 @@ export const ProfileScreen = (
                 </>
             ) : null}
 
-            <View style={styles.panel}>
+            <View style={[styles.panel, { backgroundColor: theme.surface, borderColor: theme.border }]}> 
                 {isInEditMode ? (
                     <>
-                        <Text style={styles.label}>Username</Text>
+                        <Text style={[styles.label, { color: theme.textSecondary }]}>Username</Text>
                         <TextInput
-                            style={styles.input}
+                            style={[styles.input, { borderColor: theme.borderLight, color: theme.text, backgroundColor: theme.background }]}
                             value={username}
                             onChangeText={setUsername}
                             autoCapitalize="none"
                             editable={!isSaving}
                             placeholder="username"
-                            placeholderTextColor="#94a3b8"
+                            placeholderTextColor={theme.textSecondary}
                         />
 
-                        <Text style={styles.label}>Display Name</Text>
+                        <Text style={[styles.label, { color: theme.textSecondary }]}>Display Name</Text>
                         <TextInput
-                            style={styles.input}
+                            style={[styles.input, { borderColor: theme.borderLight, color: theme.text, backgroundColor: theme.background }]}
                             value={displayName}
                             onChangeText={setDisplayName}
                             editable={!isSaving}
                             placeholder="Display name"
-                            placeholderTextColor="#94a3b8"
+                            placeholderTextColor={theme.textSecondary}
                         />
 
-                        <Text style={styles.label}>Bio</Text>
+                        <Text style={[styles.label, { color: theme.textSecondary }]}>Bio</Text>
                         <TextInput
-                            style={[styles.input, styles.textArea]}
+                            style={[styles.input, styles.textArea, { borderColor: theme.borderLight, color: theme.text, backgroundColor: theme.background }]}
                             value={bio}
                             onChangeText={setBio}
                             editable={!isSaving}
                             multiline={true}
                             placeholder="Tell people a bit about yourself"
-                            placeholderTextColor="#94a3b8"
+                            placeholderTextColor={theme.textSecondary}
                         />
 
                         <Text style={styles.label}>Profile Photo</Text>
@@ -1098,19 +1098,19 @@ export const ProfileScreen = (
                             </Pressable>
                         </View>
 
-                        <Text style={styles.photoHint}>Selected image is saved to your profile.</Text>
+                        <Text style={[styles.photoHint, { color: theme.textSecondary }]}>Selected image is saved to your profile.</Text>
 
                         <Text style={styles.sectionTitle}>Event Reminder Settings</Text>
 
                         {isReminderSettingsLoading ? (
                             <View style={styles.reminderLoadingRow}>
-                                <ActivityIndicator size="small" />
-                                <Text style={styles.readOnlyValue}>Loading reminder settings...</Text>
+                                <ActivityIndicator size="small" color={theme.primary} />
+                                <Text style={[styles.readOnlyValue, { color: theme.text }]}>Loading reminder settings...</Text>
                             </View>
                         ) : (
                             <View style={styles.reminderSettingsList}>
-                                <View style={styles.reminderSettingRow}>
-                                    <Text style={styles.reminderSettingLabel}>1 week before event</Text>
+                                <View style={[styles.reminderSettingRow, { borderColor: theme.border, backgroundColor: theme.surfaceSecondary }]}>
+                                    <Text style={[styles.reminderSettingLabel, { color: theme.text }]}>1 week before event</Text>
                                     <Switch
                                         value={eventReminderSettings.remindOneWeek}
                                         onValueChange={() => handleToggleReminderSetting("remindOneWeek")}
@@ -1118,8 +1118,8 @@ export const ProfileScreen = (
                                     />
                                 </View>
 
-                                <View style={styles.reminderSettingRow}>
-                                    <Text style={styles.reminderSettingLabel}>24 hours before event</Text>
+                                <View style={[styles.reminderSettingRow, { borderColor: theme.border, backgroundColor: theme.surfaceSecondary }]}>
+                                    <Text style={[styles.reminderSettingLabel, { color: theme.text }]}>24 hours before event</Text>
                                     <Switch
                                         value={eventReminderSettings.remindTwentyFourHours}
                                         onValueChange={() => handleToggleReminderSetting("remindTwentyFourHours")}
@@ -1127,8 +1127,8 @@ export const ProfileScreen = (
                                     />
                                 </View>
 
-                                <View style={styles.reminderSettingRow}>
-                                    <Text style={styles.reminderSettingLabel}>1 hour before event</Text>
+                                <View style={[styles.reminderSettingRow, { borderColor: theme.border, backgroundColor: theme.surfaceSecondary }]}>
+                                    <Text style={[styles.reminderSettingLabel, { color: theme.text }]}>1 hour before event</Text>
                                     <Switch
                                         value={eventReminderSettings.remindOneHour}
                                         onValueChange={() => handleToggleReminderSetting("remindOneHour")}
@@ -1146,18 +1146,18 @@ export const ProfileScreen = (
 
                         {isInterestSettingsLoading ? (
                             <View style={styles.reminderLoadingRow}>
-                                <ActivityIndicator size="small" />
+                                <ActivityIndicator size="small" color={theme.primary} />
                                 <Text style={styles.readOnlyValue}>Loading interests...</Text>
                             </View>
                         ) : (
                             <>
                                 <TextInput
-                                    style={styles.input}
+                                    style={[styles.input, { borderColor: theme.borderLight, color: theme.text, backgroundColor: theme.background }]}
                                     value={interestSearchQuery}
                                     onChangeText={setInterestSearchQuery}
                                     editable={!isInterestSettingsSaving}
                                     placeholder="Search interests (e.g., comedy, theatre, concert)"
-                                    placeholderTextColor="#94a3b8"
+                                    placeholderTextColor={theme.textSecondary}
                                 />
 
                                 {selectedInterestTags.length > 0 ? (
@@ -1174,19 +1174,19 @@ export const ProfileScreen = (
                                         ))}
                                     </View>
                                 ) : (
-                                    <Text style={styles.photoHint}>No interests selected yet.</Text>
+                                    <Text style={[styles.photoHint, { color: theme.textSecondary }]}>No interests selected yet.</Text>
                                 )}
 
                                 {filteredInterestOptions.length > 0 ? (
-                                    <View style={styles.interestSuggestionList}>
+                                    <View style={[styles.interestSuggestionList, { borderColor: theme.border, backgroundColor: theme.surface }]}> 
                                         {filteredInterestOptions.map((tag) => (
                                             <Pressable
                                                 key={`interest-option-${tag.tagId}`}
-                                                style={styles.interestSuggestionRow}
+                                                style={[styles.interestSuggestionRow, { borderBottomColor: theme.border }]}
                                                 onPress={() => handleAddInterestTag(tag)}
                                                 disabled={isInterestSettingsSaving}
                                             >
-                                                <Text style={styles.interestSuggestionLabel}>{tag.name}</Text>
+                                                <Text style={[styles.interestSuggestionLabel, { color: theme.text }]}>{tag.name}</Text>
                                             </Pressable>
                                         ))}
                                     </View>
@@ -1200,8 +1200,8 @@ export const ProfileScreen = (
 
                         <Text style={styles.sectionTitle}>Appearance</Text>
 
-                        <View style={styles.appearanceSettingRow}>
-                            <Text style={styles.appearanceSettingLabel}>Dark mode</Text>
+                        <View style={[styles.appearanceSettingRow, { borderColor: theme.border, backgroundColor: theme.surfaceSecondary }]}>
+                            <Text style={[styles.appearanceSettingLabel, { color: theme.text }]}>Dark mode</Text>
                             <View style={styles.darkModeToggleContainer}>
                                 <Pressable
                                     style={[
@@ -1213,6 +1213,7 @@ export const ProfileScreen = (
                                     <Text
                                         style={[
                                             styles.darkModeToggleButtonText,
+                                                { color: theme.textSecondary },
                                             darkModePreference === "off" && styles.darkModeToggleButtonTextActive,
                                         ]}
                                     >
@@ -1229,6 +1230,7 @@ export const ProfileScreen = (
                                     <Text
                                         style={[
                                             styles.darkModeToggleButtonText,
+                                            { color: theme.textSecondary },
                                             darkModePreference === "on" && styles.darkModeToggleButtonTextActive,
                                         ]}
                                     >
@@ -1277,26 +1279,26 @@ export const ProfileScreen = (
                 ) : (
                     <>
                         <View style={styles.readOnlyRow}>
-                            <Text style={styles.readOnlyLabel}>Username</Text>
+                            <Text style={[styles.readOnlyLabel, { color: theme.textSecondary }]}>Username</Text>
                             <View style={styles.usernameValueRow}>
-                                <Text style={styles.readOnlyValue}>{username || "-"}</Text>
+                                <Text style={[styles.readOnlyValue, { color: theme.text }]}>{username || "-"}</Text>
                                 {isVerified && username ? <VerifiedBadge /> : null}
                             </View>
                         </View>
 
                         <View style={styles.readOnlyRow}>
-                            <Text style={styles.readOnlyLabel}>Display Name</Text>
-                            <Text style={styles.readOnlyValue}>{displayName || "-"}</Text>
+                            <Text style={[styles.readOnlyLabel, { color: theme.textSecondary }]}>Display Name</Text>
+                            <Text style={[styles.readOnlyValue, { color: theme.text }]}>{displayName || "-"}</Text>
                         </View>
 
                         <View style={styles.readOnlyRow}>
-                            <Text style={styles.readOnlyLabel}>Bio</Text>
-                            <Text style={styles.readOnlyValue}>{bio || "-"}</Text>
+                            <Text style={[styles.readOnlyLabel, { color: theme.textSecondary }]}>Bio</Text>
+                            <Text style={[styles.readOnlyValue, { color: theme.text }]}>{bio || "-"}</Text>
                         </View>
 
                         <View style={styles.readOnlyRow}>
-                            <Text style={styles.readOnlyLabel}>Profile Photo</Text>
-                            <Text style={styles.readOnlyValue}>{profilePhoto ? "Set" : "-"}</Text>
+                            <Text style={[styles.readOnlyLabel, { color: theme.textSecondary }]}>Profile Photo</Text>
+                            <Text style={[styles.readOnlyValue, { color: theme.text }]}>{profilePhoto ? "Set" : "-"}</Text>
                         </View>
 
                         {isOwnProfile ? (
@@ -1312,15 +1314,15 @@ export const ProfileScreen = (
             </View>
 
             {!isInEditMode ? (
-                <View style={styles.panel}>
-                    <Text style={styles.sectionTitle}>Posts & Reviews</Text>
+                <View style={[styles.panel, { backgroundColor: theme.surface, borderColor: theme.border }]}> 
+                    <Text style={[styles.sectionTitle, { color: theme.text }]}>Posts & Reviews</Text>
                     {profileActivity.length === 0 ? (
-                        <Text style={styles.readOnlyValue}>No activity yet.</Text>
+                        <Text style={[styles.readOnlyValue, { color: theme.text }]}>No activity yet.</Text>
                     ) : (
                         profileActivity.map((activityItem) => (
                             <View key={activityItem.id} style={styles.activityRow}>
                                 <View style={styles.activityHeaderRow}>
-                                    <Text style={styles.activityMetaText}>
+                                    <Text style={[styles.activityMetaText, { color: theme.textSecondary }]}>
                                         {getActivityTypeLabel(activityItem.type)}
                                         {" · "}
                                         {formatActivityDate(activityItem.createdAt)}
@@ -1330,19 +1332,19 @@ export const ProfileScreen = (
                                             style={styles.activityMenuButton}
                                             onPress={() => handleActivityMenuPress(activityItem)}
                                         >
-                                            <Ionicons name="ellipsis-horizontal" size={18} color="#64748b" />
+                                            <Ionicons name="ellipsis-horizontal" size={18} color={theme.iconColor} />
                                         </Pressable>
                                     ) : null}
                                 </View>
                                 {activityItem.targetName ? (
-                                    <Text style={styles.activityTargetName}>{activityItem.targetName}</Text>
+                                    <Text style={[styles.activityTargetName, { color: theme.text }]}>{activityItem.targetName}</Text>
                                 ) : null}
                                 {activityItem.rating !== null ? (
                                     <Text style={styles.activityRatingText}>
                                         {activityItem.rating}/5 {getStars(activityItem.rating)}
                                     </Text>
                                 ) : null}
-                                <Text style={styles.readOnlyValue}>{activityItem.text}</Text>
+                                <Text style={[styles.readOnlyValue, { color: theme.text }]}>{activityItem.text}</Text>
                             </View>
                         ))
                     )}
@@ -1363,7 +1365,7 @@ export const ProfileScreen = (
                 }}
             >
                 <View style={styles.editModalOverlay}>
-                    <View style={styles.editModalCard}>
+                    <View style={[styles.editModalCard, { backgroundColor: theme.surface, borderColor: theme.border }]}> 
                         <Text style={styles.editModalTitle}>
                             {editingActivity?.type === "post" ? "Edit post" : "Edit review"}
                         </Text>
@@ -1406,7 +1408,8 @@ export const ProfileScreen = (
                             onChangeText={setEditingActivityText}
                             multiline={true}
                             editable={!isSavingActivityEdit}
-                            style={styles.editModalInput}
+                            style={[styles.editModalInput, { borderColor: theme.borderLight, color: theme.text, backgroundColor: theme.background }]}
+                            placeholderTextColor={theme.textSecondary}
                         />
 
                         <View style={styles.editModalButtonRow}>
@@ -1463,6 +1466,7 @@ export const ProfileScreen = (
                     <Animated.View
                         style={[
                             styles.followListPanel,
+                            { backgroundColor: theme.surface },
                             {
                                 transform: [
                                     {
@@ -1548,7 +1552,7 @@ export const ProfileScreen = (
 
                         {isFollowListLoading ? (
                             <View style={styles.modalLoadingWrap}>
-                                <ActivityIndicator size="small" />
+                                <ActivityIndicator size="small" color={theme.primary} />
                             </View>
                         ) : null}
 

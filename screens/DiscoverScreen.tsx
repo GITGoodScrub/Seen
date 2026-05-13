@@ -21,6 +21,7 @@ import {
     loadSavedEvents,
     saveEvent,
     unsaveEvent,
+    useDarkMode,
 } from "../Services";
 
 type DiscoverScreenProps = {
@@ -115,6 +116,7 @@ export const DiscoverScreen = (
     }: DiscoverScreenProps,
 ) =>
 {
+    const { theme } = useDarkMode();
     const [events, setEvents] = useState<EventSeriesItem[]>([]);
     const [sections, setSections] = useState<DiscoverSection[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -240,7 +242,7 @@ export const DiscoverScreen = (
     );
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: theme.background }]}>
             <FeedSearchBar
                 placeholderText="Search events, venues, and artists"
                 onPress={onSearchPress}
@@ -248,7 +250,7 @@ export const DiscoverScreen = (
 
             {isLoading ? (
                 <View style={styles.centred}>
-                    <ActivityIndicator size="large" color="#6366f1" />
+                    <ActivityIndicator size="large" color={theme.primary} />
                 </View>
             ) : errorMessage !== null ? (
                 <View style={styles.centred}>
@@ -256,7 +258,7 @@ export const DiscoverScreen = (
                 </View>
             ) : events.length === 0 || sections.length === 0 ? (
                 <View style={styles.centred}>
-                    <Text style={styles.emptyText}>No events found.</Text>
+                    <Text style={[styles.emptyText, { color: theme.textSecondary }]}>No events found.</Text>
                 </View>
             ) : (
                 <ScrollView
@@ -265,19 +267,19 @@ export const DiscoverScreen = (
                         <RefreshControl
                             refreshing={isRefreshing}
                             onRefresh={() => { void loadEvents(true); }}
-                            tintColor="#f8fafc"
-                            colors={["#e50914"]}
-                            progressBackgroundColor="#0f0f12"
+                            tintColor={theme.primary}
+                            colors={[theme.primary]}
+                            progressBackgroundColor={theme.surface}
                         />
                     }
                 >
                     {interestSections.length > 0 ? (
                         <View style={styles.sectionGroup}>
-                            <Text style={styles.groupTitle}>Your Genres & Event Types</Text>
+                            <Text style={[styles.groupTitle, { color: theme.text }]}>Your Genres & Event Types</Text>
                             {interestSections.map((section) => (
                                 <View key={`interest-${section.tagId}`} style={styles.sectionWrap}>
                                     <View style={styles.sectionHeader}>
-                                        <Text style={styles.sectionTitle}>{section.name}</Text>
+                                        <Text style={[styles.sectionTitle, { color: theme.text }]}>{section.name}</Text>
                                     </View>
 
                                     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.railContent}>
@@ -290,24 +292,28 @@ export const DiscoverScreen = (
                                             return (
                                                 <Pressable
                                                     key={`${section.tagId}-${event.id}`}
-                                                    style={styles.railCard}
+                                                    style={[styles.railCard, { borderColor: theme.border, backgroundColor: theme.surface }]}
                                                     onPress={() => onEventPress?.(event.id)}
                                                 >
                                                     {event.posterURL ? (
                                                         <Image source={{ uri: event.posterURL }} style={styles.railImage} />
                                                     ) : (
                                                         <View style={[styles.railImage, styles.railImagePlaceholder]}>
-                                                            <Ionicons name="musical-notes" size={28} color="#9ca3af" />
+                                                            <Ionicons name="musical-notes" size={28} color={theme.iconColor} />
                                                         </View>
                                                     )}
 
                                                     <View style={styles.railBody}>
-                                                        <Text style={styles.railTitle} numberOfLines={2}>{event.title}</Text>
-                                                        <Text style={styles.railMeta} numberOfLines={1}>{event.venueName}</Text>
+                                                        <Text style={[styles.railTitle, { color: theme.text }]} numberOfLines={2}>{event.title}</Text>
+                                                        <Text style={[styles.railMeta, { color: theme.textSecondary }]} numberOfLines={1}>{event.venueName}</Text>
                                                         <View style={styles.railFooter}>
-                                                            <Text style={styles.railDate}>{formatDate(event.nextOccurrenceAt)}</Text>
+                                                            <Text style={[styles.railDate, { color: theme.textSecondary }]}>{formatDate(event.nextOccurrenceAt)}</Text>
                                                             <Pressable
-                                                                style={[styles.railSaveButton, isSaved ? styles.railSaveButtonSaved : null]}
+                                                                style={[
+                                                                    styles.railSaveButton,
+                                                                    { backgroundColor: theme.background, borderColor: theme.borderLight },
+                                                                    isSaved ? styles.railSaveButtonSaved : null,
+                                                                ]}
                                                                 disabled={isSaveDisabled}
                                                                 onPress={() =>
                                                                 {
@@ -320,7 +326,7 @@ export const DiscoverScreen = (
                                                                 <Ionicons
                                                                     name={isSaved ? "bookmark" : "bookmark-outline"}
                                                                     size={16}
-                                                                    color={isSaved ? "#ffffff" : "#64748b"}
+                                                                    color={isSaved ? "#ffffff" : theme.iconColor}
                                                                 />
                                                                 {isSaved ? <Text style={styles.railSaveButtonSavedLabel}>Saved</Text> : null}
                                                             </Pressable>
@@ -337,11 +343,11 @@ export const DiscoverScreen = (
 
                     {otherSections.length > 0 ? (
                         <View style={styles.sectionGroup}>
-                            <Text style={styles.groupTitle}>More to Discover</Text>
+                            <Text style={[styles.groupTitle, { color: theme.text }]}>More to Discover</Text>
                             {otherSections.map((section) => (
                                 <View key={`other-${section.tagId}`} style={styles.sectionWrap}>
                                     <View style={styles.sectionHeader}>
-                                        <Text style={styles.sectionTitle}>{section.name}</Text>
+                                        <Text style={[styles.sectionTitle, { color: theme.text }]}>{section.name}</Text>
                                     </View>
 
                                     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.railContent}>
@@ -354,24 +360,28 @@ export const DiscoverScreen = (
                                             return (
                                                 <Pressable
                                                     key={`${section.tagId}-${event.id}`}
-                                                    style={styles.railCard}
+                                                    style={[styles.railCard, { borderColor: theme.border, backgroundColor: theme.surface }]}
                                                     onPress={() => onEventPress?.(event.id)}
                                                 >
                                                     {event.posterURL ? (
                                                         <Image source={{ uri: event.posterURL }} style={styles.railImage} />
                                                     ) : (
                                                         <View style={[styles.railImage, styles.railImagePlaceholder]}>
-                                                            <Ionicons name="musical-notes" size={28} color="#9ca3af" />
+                                                            <Ionicons name="musical-notes" size={28} color={theme.iconColor} />
                                                         </View>
                                                     )}
 
                                                     <View style={styles.railBody}>
-                                                        <Text style={styles.railTitle} numberOfLines={2}>{event.title}</Text>
-                                                        <Text style={styles.railMeta} numberOfLines={1}>{event.venueName}</Text>
+                                                        <Text style={[styles.railTitle, { color: theme.text }]} numberOfLines={2}>{event.title}</Text>
+                                                        <Text style={[styles.railMeta, { color: theme.textSecondary }]} numberOfLines={1}>{event.venueName}</Text>
                                                         <View style={styles.railFooter}>
-                                                            <Text style={styles.railDate}>{formatDate(event.nextOccurrenceAt)}</Text>
+                                                            <Text style={[styles.railDate, { color: theme.textSecondary }]}>{formatDate(event.nextOccurrenceAt)}</Text>
                                                             <Pressable
-                                                                style={[styles.railSaveButton, isSaved ? styles.railSaveButtonSaved : null]}
+                                                                style={[
+                                                                    styles.railSaveButton,
+                                                                    { backgroundColor: theme.background, borderColor: theme.borderLight },
+                                                                    isSaved ? styles.railSaveButtonSaved : null,
+                                                                ]}
                                                                 disabled={isSaveDisabled}
                                                                 onPress={() =>
                                                                 {
@@ -384,7 +394,7 @@ export const DiscoverScreen = (
                                                                 <Ionicons
                                                                     name={isSaved ? "bookmark" : "bookmark-outline"}
                                                                     size={16}
-                                                                    color={isSaved ? "#ffffff" : "#64748b"}
+                                                                    color={isSaved ? "#ffffff" : theme.iconColor}
                                                                 />
                                                                 {isSaved ? <Text style={styles.railSaveButtonSavedLabel}>Saved</Text> : null}
                                                             </Pressable>

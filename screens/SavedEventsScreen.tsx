@@ -17,6 +17,7 @@ import {
     getErrorMessageFromUnknown,
     loadSavedEvents,
     unsaveEvent,
+    useDarkMode,
 } from "../Services";
 
 type SavedEventsScreenProps = {
@@ -37,6 +38,7 @@ export const SavedEventsScreen = (
     }: SavedEventsScreenProps,
 ) =>
 {
+    const { theme } = useDarkMode();
     const [savedEvents, setSavedEvents] = useState<SavedEventItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
@@ -129,23 +131,23 @@ export const SavedEventsScreen = (
     if (isLoading)
     {
         return (
-            <View style={styles.container}>
+            <View style={[styles.container, { backgroundColor: theme.background }]}> 
                 <View style={styles.centered}>
-                    <ActivityIndicator size="large" color="#6366f1" />
+                    <ActivityIndicator size="large" color={theme.primary} />
                 </View>
             </View>
         );
     }
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: theme.background }]}> 
             {errorMessage !== null ? (
                 <View style={styles.centered}>
                     <Text style={styles.errorText}>{errorMessage}</Text>
                 </View>
             ) : savedEvents.length === 0 ? (
                 <View style={styles.centered}>
-                    <Text style={styles.bodyText}>You have no saved events yet.</Text>
+                    <Text style={[styles.bodyText, { color: theme.textSecondary }]}>You have no saved events yet.</Text>
                 </View>
             ) : (
                 <ScrollView
@@ -154,11 +156,14 @@ export const SavedEventsScreen = (
                         <RefreshControl
                             refreshing={isRefreshing}
                             onRefresh={() => { void loadItems(true); }}
+                            tintColor={theme.primary}
+                            colors={[theme.primary]}
+                            progressBackgroundColor={theme.surface}
                         />
                     }
                 >
                     {savedEvents.map((item) => (
-                        <View key={`${item.userId}-${item.eventId}`} style={styles.card}>
+                        <View key={`${item.userId}-${item.eventId}`} style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}> 
                             <Pressable
                                 style={styles.cardPressArea}
                                 onPress={() => onEventPress?.(item.seriesId)}
@@ -168,17 +173,17 @@ export const SavedEventsScreen = (
                                         <Image source={{ uri: item.seriesPosterURL }} style={styles.posterImage} resizeMode="contain" />
                                     </View>
                                 ) : (
-                                    <View style={styles.posterPlaceholder}>
-                                        <Ionicons name="musical-notes" size={32} color="#94a3b8" />
+                                    <View style={[styles.posterPlaceholder, { backgroundColor: theme.surfaceSecondary }]}> 
+                                        <Ionicons name="musical-notes" size={32} color={theme.iconColor} />
                                     </View>
                                 )}
 
-                                <Text style={styles.title}>{item.seriesTitle}</Text>
-                                <Text style={styles.meta}>{item.venueName}</Text>
-                                <Text style={styles.meta}>
+                                <Text style={[styles.title, { color: theme.text }]}>{item.seriesTitle}</Text>
+                                <Text style={[styles.meta, { color: theme.textSecondary }]}>{item.venueName}</Text>
+                                <Text style={[styles.meta, { color: theme.textSecondary }]}>
                                     {new Date(item.eventStartTime).toLocaleString()}
                                 </Text>
-                                <Text style={styles.meta}>
+                                <Text style={[styles.meta, { color: theme.textSecondary }]}>
                                     {item.averageRating === null
                                         ? "No ratings yet"
                                         : `${item.averageRating.toFixed(2)} / 5 (${item.reviewCount}) ${getStars(item.averageRating)}`}
@@ -186,13 +191,13 @@ export const SavedEventsScreen = (
                             </Pressable>
 
                             <Pressable
-                                style={styles.unsaveButton}
+                                style={[styles.unsaveButton, { backgroundColor: theme.surfaceSecondary }]}
                                 onPress={() =>
                                 {
                                     void handleUnsave(item.eventId);
                                 }}
                             >
-                                <Text style={styles.unsaveLabel}>Remove</Text>
+                                <Text style={[styles.unsaveLabel, { color: theme.text }]}>Remove</Text>
                             </Pressable>
                         </View>
                     ))}

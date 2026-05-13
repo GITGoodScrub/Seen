@@ -1,6 +1,6 @@
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { higLayout } from "../../constants";
-import { SideMenuItem } from "../../Services";
+import { SideMenuItem, useDarkMode } from "../../Services";
 
 type SideMenuDrawerProps = {
     items: SideMenuItem[];
@@ -42,6 +42,7 @@ export const SideMenuDrawer = (
     }: SideMenuDrawerProps,
 ) =>
 {
+    const { theme } = useDarkMode();
     const mainItems = items.filter(
         (item) => item.key !== "settings" && item.key !== "logout",
     );
@@ -50,23 +51,23 @@ export const SideMenuDrawer = (
     const initials = getInitials(displayName, username);
 
     return (
-        <View style={styles.container}>
-            <View style={styles.headerArea}>
+        <View style={[styles.container, { backgroundColor: theme.surface, borderRightColor: theme.border }]}> 
+            <View style={[styles.headerArea, { borderBottomColor: theme.border }]}> 
                 {profilePhoto ? (
                     <Image
                         source={{ uri: profilePhoto }}
                         style={styles.avatar}
                     />
                 ) : (
-                    <View style={styles.avatarFallback}>
+                    <View style={[styles.avatarFallback, { backgroundColor: theme.primary }]}> 
                         <Text style={styles.avatarInitials}>{initials}</Text>
                     </View>
                 )}
-                <Text style={styles.displayName} numberOfLines={1}>
+                <Text style={[styles.displayName, { color: theme.text }]} numberOfLines={1}>
                     {displayName ?? username ?? "User"}
                 </Text>
                 {username ? (
-                    <Text style={styles.usernameText}>@{username}</Text>
+                    <Text style={[styles.usernameText, { color: theme.textSecondary }]}>@{username}</Text>
                 ) : null}
             </View>
 
@@ -77,16 +78,16 @@ export const SideMenuDrawer = (
                         return (
                             <Pressable
                                 key={item.key}
-                                style={styles.itemRow}
+                                style={[styles.itemRow, { borderBottomColor: theme.border }]}
                                 onPress={() => onItemPress(item)}
                             >
                                 <View style={styles.itemTextWrap}>
-                                    <Text style={styles.itemLabel}>{item.label}</Text>
+                                    <Text style={[styles.itemLabel, { color: theme.text }]}>{item.label}</Text>
                                     {item.description ? (
-                                        <Text style={styles.itemDescription}>{item.description}</Text>
+                                        <Text style={[styles.itemDescription, { color: theme.textSecondary }]}>{item.description}</Text>
                                     ) : null}
                                 </View>
-                                <Text style={styles.chevron}>›</Text>
+                                <Text style={[styles.chevron, { color: theme.iconColor }]}>›</Text>
                             </Pressable>
                         );
                     },
@@ -96,24 +97,24 @@ export const SideMenuDrawer = (
             <View style={styles.spacer} />
 
             {settingsItem ? (
-                <View style={styles.settingsSection}>
+                <View style={[styles.settingsSection, { borderTopColor: theme.border }]}> 
                     <Pressable
-                        style={styles.itemRow}
+                        style={[styles.itemRow, { borderBottomColor: theme.border }]}
                         onPress={() => onItemPress(settingsItem)}
                     >
                         <View style={styles.itemTextWrap}>
-                            <Text style={styles.itemLabel}>{settingsItem.label}</Text>
+                            <Text style={[styles.itemLabel, { color: theme.text }]}>{settingsItem.label}</Text>
                             {settingsItem.description ? (
-                                <Text style={styles.itemDescription}>{settingsItem.description}</Text>
+                                <Text style={[styles.itemDescription, { color: theme.textSecondary }]}>{settingsItem.description}</Text>
                             ) : null}
                         </View>
-                        <Text style={styles.chevron}>›</Text>
+                        <Text style={[styles.chevron, { color: theme.iconColor }]}>›</Text>
                     </Pressable>
                 </View>
             ) : null}
 
             {logoutItem ? (
-                <View style={styles.logoutSection}>
+                <View style={[styles.logoutSection, { borderTopColor: theme.border }]}> 
                     <Pressable
                         style={styles.logoutRow}
                         onPress={() => onItemPress(logoutItem)}
@@ -125,6 +126,8 @@ export const SideMenuDrawer = (
         </View>
     );
 };
+
+export default SideMenuDrawer;
 
 const styles = StyleSheet.create(
 {

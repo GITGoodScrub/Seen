@@ -22,6 +22,7 @@ import {
     loadTags,
     loadEventSeriesDetail,
     updateEventSeries,
+    useDarkMode,
 } from "../Services";
 
 type EventCreationScreenProps = {
@@ -76,6 +77,7 @@ export const EventCreationScreen = (
     }: EventCreationScreenProps,
 ) =>
 {
+    const { theme } = useDarkMode();
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [startDateTime, setStartDateTime] = useState<Date | null>(null);
@@ -414,13 +416,13 @@ export const EventCreationScreen = (
     };
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: theme.background }]}> 
             <View style={styles.topRow}>
                 <Pressable style={styles.cancelButton} disabled={isSubmitting} onPress={onClose}>
-                    <Text style={styles.cancelLabel}>Cancel</Text>
+                    <Text style={[styles.cancelLabel, { color: theme.primary }]}>Cancel</Text>
                 </Pressable>
 
-                <Text style={styles.title}>{isEditing ? "Edit Event" : "Create Event"}</Text>
+                <Text style={[styles.title, { color: theme.text }]}>{isEditing ? "Edit Event" : "Create Event"}</Text>
 
                 <Pressable
                     style={styles.saveButton}
@@ -431,9 +433,9 @@ export const EventCreationScreen = (
                     }}
                 >
                     {isSubmitting ? (
-                        <ActivityIndicator size="small" color="#1d4ed8" />
+                        <ActivityIndicator size="small" color={theme.primary} />
                     ) : (
-                        <Text style={[styles.saveLabel, isSaveDisabled ? styles.saveLabelDisabled : null]}>Save</Text>
+                        <Text style={[styles.saveLabel, { color: theme.primary }, isSaveDisabled ? styles.saveLabelDisabled : null]}>Save</Text>
                     )}
                 </Pressable>
             </View>
@@ -446,22 +448,22 @@ export const EventCreationScreen = (
 
             <ScrollView contentContainerStyle={styles.formContent}>
                 {isLoadingExistingEvent ? (
-                    <View style={styles.loadingPanel}>
-                        <ActivityIndicator size="small" color="#1d4ed8" />
-                        <Text style={styles.loadingText}>Loading event details...</Text>
+                    <View style={[styles.loadingPanel, { borderColor: theme.primary, backgroundColor: theme.primaryLight }]}> 
+                        <ActivityIndicator size="small" color={theme.primary} />
+                        <Text style={[styles.loadingText, { color: theme.primary }]}>Loading event details...</Text>
                     </View>
                 ) : null}
 
-                <View style={styles.card}>
-                    <Text style={styles.sectionTitle}>Series</Text>
+                <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}> 
+                    <Text style={[styles.sectionTitle, { color: theme.text }]}>Series</Text>
 
                     <TextInput
                         editable={!isSubmitting}
                         value={title}
                         onChangeText={setTitle}
                         placeholder="Series title"
-                        placeholderTextColor="#94a3b8"
-                        style={styles.input}
+                        placeholderTextColor={theme.textSecondary}
+                        style={[styles.input, { borderColor: theme.border, backgroundColor: theme.background, color: theme.text }]}
                     />
 
                     <TextInput
@@ -469,8 +471,8 @@ export const EventCreationScreen = (
                         value={description}
                         onChangeText={setDescription}
                         placeholder="Description"
-                        placeholderTextColor="#94a3b8"
-                        style={[styles.input, styles.textArea]}
+                        placeholderTextColor={theme.textSecondary}
+                        style={[styles.input, styles.textArea, { borderColor: theme.border, backgroundColor: theme.background, color: theme.text }]}
                         multiline={true}
                     />
 
@@ -479,8 +481,8 @@ export const EventCreationScreen = (
                         value={posterURL}
                         onChangeText={setPosterURL}
                         placeholder="Poster URL (optional)"
-                        placeholderTextColor="#94a3b8"
-                        style={styles.input}
+                        placeholderTextColor={theme.textSecondary}
+                        style={[styles.input, { borderColor: theme.border, backgroundColor: theme.background, color: theme.text }]}
                         autoCapitalize="none"
                     />
 
@@ -509,8 +511,8 @@ export const EventCreationScreen = (
                         value={ticketURLBase}
                         onChangeText={setTicketURLBase}
                         placeholder="Ticket URL base (optional)"
-                        placeholderTextColor="#94a3b8"
-                        style={styles.input}
+                        placeholderTextColor={theme.textSecondary}
+                        style={[styles.input, { borderColor: theme.border, backgroundColor: theme.background, color: theme.text }]}
                         autoCapitalize="none"
                     />
 
@@ -519,22 +521,22 @@ export const EventCreationScreen = (
                         value={ageLimit}
                         onChangeText={setAgeLimit}
                         placeholder="Age limit (optional, e.g. 18)"
-                        placeholderTextColor="#94a3b8"
+                        placeholderTextColor={theme.textSecondary}
                         keyboardType="number-pad"
-                        style={styles.input}
+                        style={[styles.input, { borderColor: theme.border, backgroundColor: theme.background, color: theme.text }]}
                     />
 
                     <Pressable
-                        style={styles.tagPickerTrigger}
+                        style={[styles.tagPickerTrigger, { borderColor: theme.border, backgroundColor: theme.background }]}
                         disabled={isSubmitting}
                         onPress={() => setIsTagPickerOpen((currentValue) => !currentValue)}
                     >
-                        <Text style={styles.tagPickerTriggerText}>
+                        <Text style={[styles.tagPickerTriggerText, { color: theme.text }]}> 
                             {selectedTags.length > 0
                                 ? `${selectedTags.length} tag${selectedTags.length === 1 ? "" : "s"} selected`
                                 : "Select tags"}
                         </Text>
-                        <Text style={styles.tagPickerChevron}>{isTagPickerOpen ? "▲" : "▼"}</Text>
+                        <Text style={[styles.tagPickerChevron, { color: theme.iconColor }]}>{isTagPickerOpen ? "▲" : "▼"}</Text>
                     </Pressable>
 
                     {selectedTags.length > 0 ? (
@@ -556,8 +558,8 @@ export const EventCreationScreen = (
 
                 </View>
 
-                <View style={styles.card}>
-                    <Text style={styles.sectionTitle}>First Occurrence</Text>
+                <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}> 
+                    <Text style={[styles.sectionTitle, { color: theme.text }]}>First Occurrence</Text>
                     <View style={styles.dateTimeRow}>
                         <Pressable
                             style={styles.secondaryButton}
@@ -575,7 +577,7 @@ export const EventCreationScreen = (
                         </Pressable>
                     </View>
 
-                    <Text style={styles.dateTimeValue}>
+                    <Text style={[styles.dateTimeValue, { color: theme.textSecondary }]}> 
                         {startDateTime ? formatDateTimeForInput(startDateTime) : "No date/time selected"}
                     </Text>
 
@@ -624,9 +626,9 @@ export const EventCreationScreen = (
                         value={durationMinutes}
                         onChangeText={setDurationMinutes}
                         placeholder="Duration minutes (optional)"
-                        placeholderTextColor="#94a3b8"
+                        placeholderTextColor={theme.textSecondary}
                         keyboardType="number-pad"
-                        style={styles.input}
+                        style={[styles.input, { borderColor: theme.border, backgroundColor: theme.background, color: theme.text }]}
                     />
 
                     <TextInput
@@ -634,8 +636,8 @@ export const EventCreationScreen = (
                         value={ticketURL}
                         onChangeText={setTicketURL}
                         placeholder="Ticket URL override (optional)"
-                        placeholderTextColor="#94a3b8"
-                        style={styles.input}
+                        placeholderTextColor={theme.textSecondary}
+                        style={[styles.input, { borderColor: theme.border, backgroundColor: theme.background, color: theme.text }]}
                         autoCapitalize="none"
                     />
 
@@ -645,8 +647,8 @@ export const EventCreationScreen = (
                             value={artistIdsRaw}
                             onChangeText={setArtistIdsRaw}
                             placeholder="Artist IDs (comma-separated, optional)"
-                            placeholderTextColor="#94a3b8"
-                            style={styles.input}
+                            placeholderTextColor={theme.textSecondary}
+                            style={[styles.input, { borderColor: theme.border, backgroundColor: theme.background, color: theme.text }]}
                             autoCapitalize="none"
                         />
                     ) : null}
@@ -668,23 +670,23 @@ export const EventCreationScreen = (
                 <TouchableWithoutFeedback onPress={() => setIsTagPickerOpen(false)}>
                     <View style={styles.tagPickerModalBackdrop}>
                         <TouchableWithoutFeedback onPress={() => undefined}>
-                            <View style={styles.tagPickerModalCard}>
-                                <Text style={styles.sectionTitle}>Select Tags</Text>
+                            <View style={[styles.tagPickerModalCard, { backgroundColor: theme.surface, borderColor: theme.border }]}> 
+                                <Text style={[styles.sectionTitle, { color: theme.text }]}>Select Tags</Text>
 
                                 <TextInput
                                     editable={!isSubmitting}
                                     value={tagSearchQuery}
                                     onChangeText={setTagSearchQuery}
                                     placeholder="Type to filter tags"
-                                    placeholderTextColor="#94a3b8"
-                                    style={styles.input}
+                                    placeholderTextColor={theme.textSecondary}
+                                    style={[styles.input, { borderColor: theme.border, backgroundColor: theme.background, color: theme.text }]}
                                     autoCapitalize="none"
                                 />
 
                                 {isLoadingTags ? (
                                     <View style={styles.tagPickerLoadingRow}>
-                                        <ActivityIndicator size="small" color="#1d4ed8" />
-                                        <Text style={styles.tagPickerHintText}>Loading tags...</Text>
+                                        <ActivityIndicator size="small" color={theme.primary} />
+                                        <Text style={[styles.tagPickerHintText, { color: theme.textSecondary }]}>Loading tags...</Text>
                                     </View>
                                 ) : null}
 
@@ -699,7 +701,7 @@ export const EventCreationScreen = (
                                 ) : null}
 
                                 {!isLoadingTags && filteredAvailableTags.length === 0 && !canAddCustomTag ? (
-                                    <Text style={styles.tagPickerHintText}>No matching tags.</Text>
+                                    <Text style={[styles.tagPickerHintText, { color: theme.textSecondary }]}>No matching tags.</Text>
                                 ) : null}
 
                                 <ScrollView style={styles.tagOptionsScroll} contentContainerStyle={styles.tagOptionsContent}>
@@ -707,11 +709,11 @@ export const EventCreationScreen = (
                                         filteredAvailableTags.map((tagName) => (
                                             <Pressable
                                                 key={tagName}
-                                                style={styles.tagOptionRow}
+                                                style={[styles.tagOptionRow, { borderColor: theme.border, backgroundColor: theme.background }]}
                                                 disabled={isSubmitting}
                                                 onPress={() => addTag(tagName)}
                                             >
-                                                <Text style={styles.tagOptionText}>{tagName}</Text>
+                                                <Text style={[styles.tagOptionText, { color: theme.text }]}>{tagName}</Text>
                                             </Pressable>
                                         ))
                                     ) : null}

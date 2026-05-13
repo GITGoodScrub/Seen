@@ -1,6 +1,7 @@
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { EventSeriesItem } from "../../Services/eventTypes";
+import { useDarkMode } from "../../Services";
 
 type EventCardProps = {
     event: EventSeriesItem;
@@ -42,64 +43,65 @@ export const EventCard = (
     }: EventCardProps,
 ) =>
 {
+    const { theme } = useDarkMode();
     const isActive = event.status === "active";
 
     return (
-        <Pressable style={styles.card} onPress={onPress}>
+        <Pressable style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]} onPress={onPress}>
             {event.posterURL ? (
                 <Image
                     source={{ uri: event.posterURL }}
                     style={styles.poster}
                 />
             ) : (
-                <View style={styles.posterPlaceholder}>
-                    <Ionicons name="musical-notes" size={36} color="#94a3b8" />
+                <View style={[styles.posterPlaceholder, { backgroundColor: theme.surfaceSecondary }]}> 
+                    <Ionicons name="musical-notes" size={36} color={theme.iconColor} />
                 </View>
             )}
 
             <View style={styles.body}>
                 <View style={styles.titleRow}>
-                    <Text style={styles.title} numberOfLines={2}>
+                    <Text style={[styles.title, { color: theme.text }]} numberOfLines={2}>
                         {event.title}
                     </Text>
                     <View style={styles.titleActions}>
                         {!isActive && (
-                            <View style={styles.statusBadge}>
-                                <Text style={styles.statusText}>{event.status}</Text>
+                            <View style={[styles.statusBadge, { backgroundColor: theme.surfaceSecondary }]}> 
+                                <Text style={[styles.statusText, { color: theme.textSecondary }]}>{event.status}</Text>
                             </View>
                         )}
 
                         <Pressable
-                            style={styles.saveButton}
+                            style={[styles.saveButton, { backgroundColor: theme.background }]}
                             disabled={isSaveDisabled}
                             onPress={onSavePress}
                         >
                             <Ionicons
                                 name={isSaved ? "bookmark" : "bookmark-outline"}
                                 size={18}
-                                color={isSaved ? "#0ea5e9" : "#64748b"}
+                                color={isSaved ? "#0ea5e9" : theme.iconColor}
                             />
                         </Pressable>
                     </View>
                 </View>
 
                 <View style={styles.metaRow}>
-                    <Ionicons name="location-outline" size={14} color="#64748b" />
-                    <Text style={styles.metaText} numberOfLines={1}>
+                    <Ionicons name="location-outline" size={14} color={theme.iconColor} />
+                    <Text style={[styles.metaText, { color: theme.textSecondary }]} numberOfLines={1}>
                         {event.venueName}
                     </Text>
                 </View>
 
                 <View style={styles.metaRow}>
-                    <Ionicons name="calendar-outline" size={14} color="#64748b" />
-                    <Text style={styles.metaText}>
+                    <Ionicons name="calendar-outline" size={14} color={theme.iconColor} />
+                    <Text style={[styles.metaText, { color: theme.textSecondary }]}>
                         {formatDate(event.nextOccurrenceAt)}
                     </Text>
                 </View>
 
                 <View style={styles.metaRow}>
-                    <Ionicons name="star-outline" size={14} color="#64748b" />
-                    <Text style={styles.metaText}>
+                    <Ionicons name="star-outline" size={14} color={theme.iconColor} />
+                    <Text style={[styles.metaText, { color: theme.textSecondary }]}>
                         {event.averageRating === null
                             ? "No ratings yet"
                             : `${event.averageRating.toFixed(2)} / 5 (${event.reviewCount}) ${getStars(event.averageRating)}`}

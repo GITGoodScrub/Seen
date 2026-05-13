@@ -11,6 +11,7 @@ import {
     logoutFromSeen,
     observeFirebaseAuthState,
     syncSessionWithBackend,
+    useDarkMode,
 } from "./Services";
 import { User } from "firebase/auth";
 
@@ -193,19 +194,67 @@ export default function App()
 
     return (
         <DarkModeProvider>
+            <AppContent
+                authViewState={authViewState}
+                authSession={authSession}
+                authErrorMessage={authErrorMessage}
+                interestsGateState={interestsGateState}
+                interestSetup={interestSetup}
+                onAuthSuccess={handleAuthSuccess}
+                onCompleteInterestSetup={() =>
+                {
+                    setInterestsGateState("done");
+                    setInterestSetup(null);
+                }}
+                onSessionUpdate={handleSessionUpdate}
+                onLogout={handleLogout}
+            />
+        </DarkModeProvider>
+    );
+}
+
+type AppContentProps = {
+    authViewState: AuthViewState;
+    authSession: AuthSession | null;
+    authErrorMessage: string | null;
+    interestsGateState: InterestsGateState;
+    interestSetup: InterestSetup | null;
+    onAuthSuccess: (nextSession: AuthSession) => void;
+    onCompleteInterestSetup: () => void;
+    onSessionUpdate: (nextSession: AuthSession) => void;
+    onLogout: () => Promise<void>;
+};
+
+const AppContent = (
+    {
+        authViewState,
+        authSession,
+        authErrorMessage,
+        interestsGateState,
+        interestSetup,
+        onAuthSuccess,
+        onCompleteInterestSetup,
+        onSessionUpdate,
+        onLogout,
+    }: AppContentProps,
+) =>
+{
+    const { isDarkMode, theme } = useDarkMode();
+
+    return (
             <SafeAreaProvider>
             {authViewState === "loading" ? (
-                <SafeAreaView style={styles.loadingSafeArea} edges={["top", "bottom"]}>
+                <SafeAreaView style={[styles.loadingSafeArea, { backgroundColor: theme.background }]} edges={["top", "bottom"]}>
                     <View style={styles.loadingContent}>
-                        <ActivityIndicator size="large" />
-                        <Text style={styles.loadingLabel}>Loading your Seen session...</Text>
+                        <ActivityIndicator size="large" color={theme.primary} />
+                        <Text style={[styles.loadingLabel, { color: theme.textSecondary }]}>Loading your Seen session...</Text>
                     </View>
                 </SafeAreaView>
             ) : null}
 
             {authViewState === "signed-out" ? (
                 <AuthScreen
-                    onAuthSuccess={handleAuthSuccess}
+                    onAuthSuccess={onAuthSuccess}
                     initialErrorMessage={authErrorMessage}
                 />
             ) : null}
@@ -214,36 +263,27 @@ export default function App()
                 interestsGateState === "required" && interestSetup ? (
                     <InterestsOnboardingScreen
                         setup={interestSetup}
-                        onComplete={() =>
-                        {
-                            setInterestsGateState("done");
-                            setInterestSetup(null);
-                        }}
-                        onSkipComplete={() =>
-                        {
-                            setInterestsGateState("done");
-                            setInterestSetup(null);
-                        }}
+                        onComplete={onCompleteInterestSetup}
+                        onSkipComplete={onCompleteInterestSetup}
                     />
                 ) : interestsGateState === "loading" ? (
-                    <SafeAreaView style={styles.loadingSafeArea} edges={["top", "bottom"]}>
+                    <SafeAreaView style={[styles.loadingSafeArea, { backgroundColor: theme.background }]} edges={["top", "bottom"]}>
                         <View style={styles.loadingContent}>
-                            <ActivityIndicator size="large" />
-                            <Text style={styles.loadingLabel}>Preparing your recommendations...</Text>
+                            <ActivityIndicator size="large" color={theme.primary} />
+                            <Text style={[styles.loadingLabel, { color: theme.textSecondary }]}>Preparing your recommendations...</Text>
                         </View>
                     </SafeAreaView>
                 ) : (
                 <AppShellScreen
                     authSession={authSession}
-                    onSessionUpdate={handleSessionUpdate}
-                    onLogout={handleLogout}
+                    onSessionUpdate={onSessionUpdate}
+                    onLogout={onLogout}
                 />
                 )
             ) : null}
             </SafeAreaProvider>
-        </DarkModeProvider>
     );
-}
+};
 
 const styles = StyleSheet.create(
 {

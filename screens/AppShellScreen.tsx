@@ -2,7 +2,8 @@ import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Easing, Pressable, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { AppHeader, BottomTabBar, SideMenuDrawer, SwipeBackGestureView } from "../components";
+import { AppHeader, BottomTabBar, SwipeBackGestureView } from "../components";
+import SideMenuDrawer from "../components/Navigation/SideMenuDrawer";
 import { higLayout } from "../constants";
 import {
     AuthSession,

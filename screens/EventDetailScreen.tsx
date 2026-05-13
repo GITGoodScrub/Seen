@@ -25,6 +25,7 @@ import {
     getErrorMessageFromUnknown,
     loadEventSeriesDetail,
     updateSeriesReview,
+    useDarkMode,
 } from "../Services";
 
 type EventDetailScreenProps = {
@@ -143,6 +144,7 @@ export const EventDetailScreen = (
     }: EventDetailScreenProps,
 ) =>
 {
+    const { theme } = useDarkMode();
     const [eventDetail, setEventDetail] = useState<EventSeriesDetail | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
@@ -433,8 +435,8 @@ export const EventDetailScreen = (
     if (isLoading)
     {
         return (
-            <View style={styles.centered}>
-                <ActivityIndicator size="large" color="#6366f1" />
+            <View style={[styles.centered, { backgroundColor: theme.background }]}> 
+                <ActivityIndicator size="large" color={theme.primary} />
             </View>
         );
     }
@@ -442,7 +444,7 @@ export const EventDetailScreen = (
     if (errorMessage !== null)
     {
         return (
-            <View style={styles.centered}>
+            <View style={[styles.centered, { backgroundColor: theme.background }]}> 
                 <Text style={styles.errorText}>{errorMessage}</Text>
             </View>
         );
@@ -451,35 +453,38 @@ export const EventDetailScreen = (
     if (!eventDetail)
     {
         return (
-            <View style={styles.centered}>
-                <Text style={styles.emptyText}>Event details unavailable.</Text>
+            <View style={[styles.centered, { backgroundColor: theme.background }]}> 
+                <Text style={[styles.emptyText, { color: theme.textSecondary }]}>Event details unavailable.</Text>
             </View>
         );
     }
 
     return (
         <ScrollView
-            contentContainerStyle={styles.content}
+            contentContainerStyle={[styles.content, { backgroundColor: theme.background }]}
             refreshControl={
                 <RefreshControl
                     refreshing={isRefreshing}
                     onRefresh={() => { void loadDetail(true); }}
+                    tintColor={theme.primary}
+                    colors={[theme.primary]}
+                    progressBackgroundColor={theme.surface}
                 />
             }
         >
-            <View style={styles.card}>
-                <Text style={styles.title}>{eventDetail.title}</Text>
+            <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}> 
+                <Text style={[styles.title, { color: theme.text }]}>{eventDetail.title}</Text>
                 <Pressable
                     onPress={() => onOpenVenuePress?.(eventDetail.venueId)}
                     style={styles.venueButton}
                 >
-                    <Text style={styles.venueText}>{eventDetail.venueName}</Text>
+                    <Text style={[styles.venueText, { color: theme.primary }]}>{eventDetail.venueName}</Text>
                 </Pressable>
-                <Text style={styles.metaText}>Status: {eventDetail.status}</Text>
+                <Text style={[styles.metaText, { color: theme.textSecondary }]}>Status: {eventDetail.status}</Text>
                 {eventDetail.ageLimit !== null ? (
-                    <Text style={styles.metaText}>Age limit: {eventDetail.ageLimit}+</Text>
+                    <Text style={[styles.metaText, { color: theme.textSecondary }]}>Age limit: {eventDetail.ageLimit}+</Text>
                 ) : null}
-                <Text style={styles.description}>{eventDetail.description}</Text>
+                <Text style={[styles.description, { color: theme.text }]}>{eventDetail.description}</Text>
 
                 {canManageEvent ? (
                     <View style={styles.manageActionsRow}>
@@ -502,13 +507,13 @@ export const EventDetailScreen = (
                 ) : null}
             </View>
 
-            <View style={styles.card}>
-                <Text style={styles.sectionTitle}>Artists</Text>
-                <Text style={styles.bodyText}>{artistSummary}</Text>
+            <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}> 
+                <Text style={[styles.sectionTitle, { color: theme.text }]}>Artists</Text>
+                <Text style={[styles.bodyText, { color: theme.textSecondary }]}>{artistSummary}</Text>
             </View>
 
-            <View style={styles.card}>
-                <Text style={styles.sectionTitle}>Series Rating</Text>
+            <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}> 
+                <Text style={[styles.sectionTitle, { color: theme.text }]}>Series Rating</Text>
                 {eventDetail.averageRating === null ? (
                     <Text style={styles.bodyText}>No ratings yet.</Text>
                 ) : (
@@ -520,7 +525,7 @@ export const EventDetailScreen = (
                     </>
                 )}
 
-                <View style={styles.reviewComposer}>
+                <View style={[styles.reviewComposer, { borderTopColor: theme.border }]}> 
                     <Text style={styles.reviewComposerTitle}>
                         {editingReviewId === null ? "Leave a review" : "Edit your review"}
                     </Text>
@@ -585,15 +590,15 @@ export const EventDetailScreen = (
                 </View>
             </View>
 
-            <View style={styles.card}>
-                <Text style={styles.sectionTitle}>Reviews</Text>
+            <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}> 
+                <Text style={[styles.sectionTitle, { color: theme.text }]}>Reviews</Text>
                 {eventDetail.reviews.length === 0 ? (
                     <Text style={styles.bodyText}>No reviews yet.</Text>
                 ) : (
                     eventDetail.reviews.map((review) => (
-                        <View key={review.reviewId} style={styles.occurrenceRow}>
+                        <View key={review.reviewId} style={[styles.occurrenceRow, { borderTopColor: theme.border }]}> 
                             <View style={styles.reviewHeaderRow}>
-                                <Text style={styles.reviewTopLine}>
+                                <Text style={[styles.reviewTopLine, { color: theme.textSecondary }]}>
                                     {(review.username ? `@${review.username}` : "Unknown user")}
                                     {" · "}
                                     {review.rating}/5
@@ -610,24 +615,24 @@ export const EventDetailScreen = (
                                         style={styles.reviewMenuButton}
                                         onPress={() => handleReviewMenuPress(review)}
                                     >
-                                        <Ionicons name="ellipsis-horizontal" size={18} color="#64748b" />
+                                        <Ionicons name="ellipsis-horizontal" size={18} color={theme.iconColor} />
                                     </Pressable>
                                 ) : null}
                             </View>
                             <Text style={styles.reviewStars}>{getStars(review.rating)}</Text>
-                            <Text style={styles.bodyText}>{review.text}</Text>
+                            <Text style={[styles.bodyText, { color: theme.text }]}>{review.text}</Text>
                         </View>
                     ))
                 )}
             </View>
 
-            <View style={styles.card}>
-                <Text style={styles.sectionTitle}>Occurrences</Text>
+            <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}> 
+                <Text style={[styles.sectionTitle, { color: theme.text }]}>Occurrences</Text>
                 {eventDetail.occurrences.length === 0 ? (
                     <Text style={styles.bodyText}>No occurrences yet.</Text>
                 ) : (
                     eventDetail.occurrences.map((occurrence) => (
-                        <View key={occurrence.id} style={styles.occurrenceRow}>
+                        <View key={occurrence.id} style={[styles.occurrenceRow, { borderTopColor: theme.border }]}> 
                             <Text style={styles.occurrenceTitle}>
                                 {renderOccurrenceTitle(occurrence, eventDetail.title)}
                             </Text>

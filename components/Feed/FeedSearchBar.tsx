@@ -1,4 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useDarkMode } from "../../Services";
 
 type FeedSearchBarProps = {
     placeholderText?: string;
@@ -12,15 +13,17 @@ export const FeedSearchBar = (
     }: FeedSearchBarProps,
 ) =>
 {
+    const { theme } = useDarkMode();
+
     return (
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
             <Pressable
-                style={styles.searchShell}
+                style={[styles.searchShell, { borderColor: theme.borderLight, backgroundColor: theme.background }]}
                 onPress={onPress}
             >
-                <View style={styles.searchIconCircle} />
-                <View style={styles.searchIconHandle} />
-                <Text style={styles.placeholderText}>{placeholderText}</Text>
+                <View style={[styles.searchIconCircle, { borderColor: theme.iconColor }]} />
+                <View style={[styles.searchIconHandle, { backgroundColor: theme.iconColor }]} />
+                <Text style={[styles.placeholderText, { color: theme.textSecondary }]}>{placeholderText}</Text>
             </Pressable>
         </View>
     );

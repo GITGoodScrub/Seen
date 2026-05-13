@@ -16,6 +16,7 @@ import {
     createPostComment,
     getErrorMessageFromUnknown,
     loadPostComments,
+    useDarkMode,
 } from "../../Services";
 
 type CommentsSheetProps = {
@@ -32,6 +33,7 @@ export const CommentsSheet = (
     }: CommentsSheetProps,
 ) =>
 {
+    const { theme } = useDarkMode();
     const [comments, setComments] = useState<PostComment[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [inputText, setInputText] = useState("");
@@ -109,13 +111,13 @@ export const CommentsSheet = (
                 <KeyboardAvoidingView
                     behavior={Platform.OS === "ios" ? "padding" : "height"}
                 >
-                    <View style={styles.sheet}>
-                        <View style={styles.handle} />
+                    <View style={[styles.sheet, { backgroundColor: theme.surface }]}> 
+                        <View style={[styles.handle, { backgroundColor: theme.borderLight }]} />
 
-                        <View style={styles.header}>
-                            <Text style={styles.title}>Comments</Text>
+                        <View style={[styles.header, { borderBottomColor: theme.border }]}>
+                            <Text style={[styles.title, { color: theme.text }]}>Comments</Text>
                             <Pressable style={styles.closeButton} onPress={onClose}>
-                                <Text style={styles.closeLabel}>✕</Text>
+                                <Text style={[styles.closeLabel, { color: theme.iconColor }]}>✕</Text>
                             </Pressable>
                         </View>
 
@@ -125,17 +127,17 @@ export const CommentsSheet = (
                             keyboardShouldPersistTaps="handled"
                         >
                             {isLoading ? (
-                                <ActivityIndicator color="#1d4ed8" style={styles.loader} />
+                                <ActivityIndicator color={theme.primary} style={styles.loader} />
                             ) : comments.length === 0 ? (
-                                <Text style={styles.emptyText}>No comments yet. Be the first!</Text>
+                                <Text style={[styles.emptyText, { color: theme.textSecondary }]}>No comments yet. Be the first!</Text>
                             ) : (
                                 comments.map(
                                     (comment) => (
                                         <View key={comment.id} style={styles.commentItem}>
-                                            <Text style={styles.commentAuthor}>
+                                            <Text style={[styles.commentAuthor, { color: theme.text }]}>
                                                 {comment.authorUsername ? `@${comment.authorUsername}` : "Someone"}
                                             </Text>
-                                            <Text style={styles.commentText}>{comment.text}</Text>
+                                            <Text style={[styles.commentText, { color: theme.text }]}>{comment.text}</Text>
                                         </View>
                                     ),
                                 )
@@ -146,13 +148,13 @@ export const CommentsSheet = (
                             <Text style={styles.errorText}>{errorMessage}</Text>
                         ) : null}
 
-                        <View style={styles.inputRow}>
+                        <View style={[styles.inputRow, { borderTopColor: theme.border }]}> 
                             <TextInput
-                                style={styles.textInput}
+                                style={[styles.textInput, { borderColor: theme.borderLight, color: theme.text, backgroundColor: theme.background }]}
                                 value={inputText}
                                 onChangeText={setInputText}
                                 placeholder="Add a comment..."
-                                placeholderTextColor="#94a3b8"
+                                placeholderTextColor={theme.textSecondary}
                                 editable={!isSubmitting}
                                 returnKeyType="send"
                                 onSubmitEditing={() =>
@@ -162,7 +164,11 @@ export const CommentsSheet = (
                             />
 
                             <Pressable
-                                style={[styles.sendButton, isSendDisabled && styles.sendButtonDisabled]}
+                                style={[
+                                    styles.sendButton,
+                                    { backgroundColor: theme.primary },
+                                    isSendDisabled && styles.sendButtonDisabled,
+                                ]}
                                 disabled={isSendDisabled}
                                 onPress={() =>
                                 {

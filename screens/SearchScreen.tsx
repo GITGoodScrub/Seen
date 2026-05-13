@@ -4,6 +4,7 @@ import {
     getErrorMessageFromUnknown,
     loadSearchResults,
     SearchResult,
+    useDarkMode,
 } from "../Services";
 
 type SearchScreenProps = {
@@ -102,6 +103,7 @@ export const SearchScreen = (
     }: SearchScreenProps,
 ) =>
 {
+    const { theme } = useDarkMode();
     const [searchQuery, setSearchQuery] = useState("");
     const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
     const [isSearching, setIsSearching] = useState(false);
@@ -267,7 +269,7 @@ export const SearchScreen = (
         {
             return (
                 <View style={styles.loadingRow}>
-                    <ActivityIndicator size="small" />
+                    <ActivityIndicator size="small" color={theme.primary} />
                     <Text style={styles.loadingLabel}>Searching...</Text>
                 </View>
             );
@@ -318,9 +320,9 @@ export const SearchScreen = (
     };
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: theme.background }]}> 
             <View style={styles.topRow}>
-                <View style={styles.inputShell}>
+                <View style={[styles.inputShell, { borderColor: theme.borderLight, backgroundColor: theme.surface }]}> 
                     <SearchIcon />
 
                     <TextInput
@@ -328,8 +330,8 @@ export const SearchScreen = (
                         value={searchQuery}
                         onChangeText={setSearchQuery}
                         placeholder="Search people, events, and venues"
-                        placeholderTextColor="#64748b"
-                        style={styles.input}
+                        placeholderTextColor={theme.textSecondary}
+                        style={[styles.input, { color: theme.text }]}
                         returnKeyType="search"
                         onSubmitEditing={() => handleSubmitSearch(searchQuery)}
                     />
@@ -339,7 +341,7 @@ export const SearchScreen = (
                     style={styles.cancelButton}
                     onPress={onClose}
                 >
-                    <Text style={styles.cancelLabel}>Cancel</Text>
+                    <Text style={[styles.cancelLabel, { color: theme.primary }]}>Cancel</Text>
                 </Pressable>
             </View>
 

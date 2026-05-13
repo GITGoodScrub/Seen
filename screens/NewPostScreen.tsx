@@ -5,6 +5,7 @@ import {
     AuthSession,
     createPost,
     getErrorMessageFromUnknown,
+    useDarkMode,
 } from "../Services";
 
 type NewPostScreenProps = {
@@ -21,6 +22,7 @@ export const NewPostScreen = (
     }: NewPostScreenProps,
 ) =>
 {
+    const { theme } = useDarkMode();
     const [postText, setPostText] = useState("");
     const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null);
     const [isPosting, setIsPosting] = useState(false);
@@ -124,17 +126,17 @@ export const NewPostScreen = (
     };
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: theme.background }]}> 
             <View style={styles.topRow}>
                 <Pressable
                     style={styles.cancelButton}
                     disabled={isPosting}
                     onPress={onClose}
                 >
-                    <Text style={styles.cancelLabel}>Cancel</Text>
+                    <Text style={[styles.cancelLabel, { color: theme.primary }]}>Cancel</Text>
                 </Pressable>
 
-                <Text style={styles.title}>New Post</Text>
+                <Text style={[styles.title, { color: theme.text }]}>New Post</Text>
 
                 <Pressable
                     style={styles.postButton}
@@ -144,16 +146,16 @@ export const NewPostScreen = (
                         void handlePublishPost();
                     }}
                 >
-                    {isPosting ? <ActivityIndicator size="small" color="#1d4ed8" /> : <Text style={[styles.postLabel, isPostDisabled ? styles.postLabelDisabled : null]}>Post</Text>}
+                    {isPosting ? <ActivityIndicator size="small" color={theme.primary} /> : <Text style={[styles.postLabel, { color: theme.primary }, isPostDisabled ? styles.postLabelDisabled : null]}>Post</Text>}
                 </Pressable>
             </View>
 
-            <View style={styles.composerCard}>
+            <View style={[styles.composerCard, { backgroundColor: theme.surface, borderColor: theme.border }]}> 
                 <View style={styles.authorRow}>
                     <View style={styles.avatarPlaceholder} />
                     <View>
                         <Text style={styles.authorName}>{displayName}</Text>
-                        <Text style={styles.authorMeta}>Share what you are seeing right now.</Text>
+                        <Text style={[styles.authorMeta, { color: theme.textSecondary }]}>Share what you are seeing right now.</Text>
                     </View>
                 </View>
 
@@ -163,8 +165,8 @@ export const NewPostScreen = (
                     onChangeText={setPostText}
                     multiline={true}
                     placeholder="Write something..."
-                    placeholderTextColor="#94a3b8"
-                    style={styles.input}
+                    placeholderTextColor={theme.textSecondary}
+                    style={[styles.input, { borderColor: theme.borderLight, color: theme.text, backgroundColor: theme.background }]}
                     maxLength={500}
                 />
 
@@ -177,7 +179,7 @@ export const NewPostScreen = (
                             void handlePickPhoto();
                         }}
                     >
-                        <Text style={styles.photoActionButtonLabel}>{photoDataUrl ? "Replace Photo" : "Attach Photo"}</Text>
+                        <Text style={[styles.photoActionButtonLabel, { color: theme.primary }]}>{photoDataUrl ? "Replace Photo" : "Attach Photo"}</Text>
                     </Pressable>
 
                     {photoDataUrl ? (

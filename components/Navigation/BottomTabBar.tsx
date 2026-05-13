@@ -2,6 +2,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { AppTabItem, AppTabKey } from "../../Services";
 import { higLayout } from "../../constants";
 import { TabImagePlaceholder } from "./TabImagePlaceholder";
+import { useDarkMode } from "../../Services";
 
 type BottomTabBarProps = {
     tabs: AppTabItem[];
@@ -19,8 +20,10 @@ export const BottomTabBar = (
     }: BottomTabBarProps,
 ) =>
 {
+    const { theme } = useDarkMode();
+
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { borderTopColor: theme.border, backgroundColor: theme.surface }]}> 
             {tabs.map(
                 (tab) =>
                 {
@@ -33,6 +36,7 @@ export const BottomTabBar = (
                             style={[
                                 styles.tabButton,
                                 isActive ? styles.activeTabButton : undefined,
+                                isActive ? { backgroundColor: theme.surfaceSecondary } : undefined,
                             ]}
                             onPress={() => onTabPress(tab.key)}
                         >
@@ -53,6 +57,7 @@ export const BottomTabBar = (
                                 style={[
                                     styles.tabText,
                                     isActive ? styles.activeTabText : undefined,
+                                    { color: isActive ? theme.primary : theme.textSecondary },
                                 ]}
                             >
                                 {tab.label}

@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { higLayout } from "../../constants";
+import { useDarkMode } from "../../Services";
 
 type AppHeaderProps = {
     onMenuPress?: () => void;
@@ -15,18 +16,20 @@ export const AppHeader = (
     }: AppHeaderProps,
 ) =>
 {
+    const { theme } = useDarkMode();
+
     return (
-        <View style={styles.headerContainer}>
+        <View style={[styles.headerContainer, { borderBottomColor: theme.border, backgroundColor: theme.surface }]}>
             <Pressable
                 style={styles.iconButton}
                 onPress={onMenuPress}
             >
-                <View style={styles.burgerLine} />
-                <View style={styles.burgerLine} />
-                <View style={styles.burgerLine} />
+                <View style={[styles.burgerLine, { backgroundColor: theme.text }]} />
+                <View style={[styles.burgerLine, { backgroundColor: theme.text }]} />
+                <View style={[styles.burgerLine, { backgroundColor: theme.text }]} />
             </Pressable>
 
-            <Text style={styles.headerTitle}>Seen</Text>
+            <Text style={[styles.headerTitle, { color: theme.primary }]}>Seen</Text>
 
             <Pressable
                 style={styles.iconButton}
@@ -34,17 +37,17 @@ export const AppHeader = (
                 disabled={rightActionIcon === "none"}
             >
                 {rightActionIcon === "none" ? null : rightActionIcon === "settings" ? (
-                    <View style={styles.settingsIconOuter}>
-                        <View style={[styles.settingsTooth, styles.settingsToothTop]} />
-                        <View style={[styles.settingsTooth, styles.settingsToothBottom]} />
-                        <View style={[styles.settingsToothVertical, styles.settingsToothLeft]} />
-                        <View style={[styles.settingsToothVertical, styles.settingsToothRight]} />
-                        <View style={styles.settingsIconInner} />
+                    <View style={[styles.settingsIconOuter, { borderColor: theme.text }]}>
+                        <View style={[styles.settingsTooth, styles.settingsToothTop, { backgroundColor: theme.text }]} />
+                        <View style={[styles.settingsTooth, styles.settingsToothBottom, { backgroundColor: theme.text }]} />
+                        <View style={[styles.settingsToothVertical, styles.settingsToothLeft, { backgroundColor: theme.text }]} />
+                        <View style={[styles.settingsToothVertical, styles.settingsToothRight, { backgroundColor: theme.text }]} />
+                        <View style={[styles.settingsIconInner, { backgroundColor: theme.text }]} />
                     </View>
                 ) : (
                     <>
-                        <View style={styles.plusHorizontal} />
-                        <View style={styles.plusVertical} />
+                        <View style={[styles.plusHorizontal, { backgroundColor: theme.text }]} />
+                        <View style={[styles.plusVertical, { backgroundColor: theme.text }]} />
                     </>
                 )}
             </Pressable>

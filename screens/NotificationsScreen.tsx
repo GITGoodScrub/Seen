@@ -13,6 +13,7 @@ import {
     getErrorMessageFromUnknown,
     loadNotifications,
     markNotificationAsRead,
+    useDarkMode,
 } from "../Services";
 
 type NotificationsScreenProps = {
@@ -25,6 +26,7 @@ export const NotificationsScreen = (
     }: NotificationsScreenProps,
 ) =>
 {
+    const { theme } = useDarkMode();
     const [notifications, setNotifications] = useState<NotificationItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
@@ -153,8 +155,8 @@ export const NotificationsScreen = (
     };
 
     return (
-        <View style={styles.container}>
-            <Text style={styles.title}>Notifications</Text>
+        <View style={[styles.container, { backgroundColor: theme.background }]}> 
+            <Text style={[styles.title, { color: theme.text }]}>Notifications</Text>
 
             <ScrollView
                 contentContainerStyle={styles.listContent}
@@ -165,32 +167,34 @@ export const NotificationsScreen = (
                         {
                             void loadData(true);
                         }}
-                        tintColor="#1d4ed8"
+                        tintColor={theme.primary}
+                        colors={[theme.primary]}
+                        progressBackgroundColor={theme.surface}
                     />
                 }
             >
                 {isLoading ? (
-                    <View style={styles.stateCard}>
-                        <ActivityIndicator color="#1d4ed8" />
-                        <Text style={styles.stateText}>Loading notifications...</Text>
+                    <View style={[styles.stateCard, { borderColor: theme.border, backgroundColor: theme.surface }]}> 
+                        <ActivityIndicator color={theme.primary} />
+                        <Text style={[styles.stateText, { color: theme.textSecondary }]}>Loading notifications...</Text>
                     </View>
                 ) : errorMessage ? (
-                    <View style={styles.stateCard}>
+                    <View style={[styles.stateCard, { borderColor: theme.border, backgroundColor: theme.surface }]}> 
                         <Text style={styles.errorText}>{errorMessage}</Text>
                         <Pressable
-                            style={styles.retryButton}
+                            style={[styles.retryButton, { backgroundColor: theme.primaryLight }]}
                             onPress={() =>
                             {
                                 void loadData();
                             }}
                         >
-                            <Text style={styles.retryButtonText}>Try again</Text>
+                            <Text style={[styles.retryButtonText, { color: theme.primary }]}>Try again</Text>
                         </Pressable>
                     </View>
                 ) : notifications.length === 0 ? (
-                    <View style={styles.stateCard}>
-                        <Text style={styles.stateTitle}>No notifications yet</Text>
-                        <Text style={styles.stateText}>New follows, interactions, mentions, and event reminders will show up here.</Text>
+                    <View style={[styles.stateCard, { borderColor: theme.border, backgroundColor: theme.surface }]}> 
+                        <Text style={[styles.stateTitle, { color: theme.text }]}>No notifications yet</Text>
+                        <Text style={[styles.stateText, { color: theme.textSecondary }]}>New follows, interactions, mentions, and event reminders will show up here.</Text>
                     </View>
                 ) : (
                     notifications.map(
@@ -201,7 +205,9 @@ export const NotificationsScreen = (
                                     key={notification.notificationId}
                                     style={[
                                         styles.notificationCard,
+                                        { borderColor: theme.border, backgroundColor: theme.surface },
                                         !notification.isRead ? styles.unreadCard : null,
+                                        !notification.isRead ? { borderColor: theme.primary, backgroundColor: theme.primaryLight } : null,
                                     ]}
                                     onPress={() =>
                                     {
@@ -209,14 +215,14 @@ export const NotificationsScreen = (
                                     }}
                                 >
                                     <View style={styles.notificationHeader}>
-                                        <Text style={styles.notificationTitle}>{notification.title}</Text>
-                                        <Text style={styles.notificationDate}>{formatRelativeDate(notification.createdAt)}</Text>
+                                        <Text style={[styles.notificationTitle, { color: theme.text }]}>{notification.title}</Text>
+                                        <Text style={[styles.notificationDate, { color: theme.textSecondary }]}>{formatRelativeDate(notification.createdAt)}</Text>
                                     </View>
-                                    <Text style={styles.notificationBody}>{notification.body}</Text>
+                                    <Text style={[styles.notificationBody, { color: theme.text }]}>{notification.body}</Text>
 
                                     {!notification.isRead ? (
-                                        <View style={styles.unreadBadge}>
-                                            <Text style={styles.unreadBadgeText}>New</Text>
+                                        <View style={[styles.unreadBadge, { backgroundColor: theme.primaryLight }]}> 
+                                            <Text style={[styles.unreadBadgeText, { color: theme.primary }]}>New</Text>
                                         </View>
                                     ) : null}
                                 </Pressable>

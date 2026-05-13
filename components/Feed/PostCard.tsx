@@ -1,5 +1,6 @@
 import { Alert, Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useDarkMode } from "../../Services";
 
 type PostCardProps = {
     authorName: string;
@@ -33,6 +34,8 @@ export const PostCard = (
     }: PostCardProps,
 ) =>
 {
+    const { theme } = useDarkMode();
+
     const displayDate = (() =>
     {
         if (!createdAt)
@@ -78,7 +81,7 @@ export const PostCard = (
     };
 
     return (
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}> 
             <View style={styles.headerRow}>
                 <View style={styles.authorInfo}>
                     {authorPhotoUrl ? (
@@ -90,8 +93,8 @@ export const PostCard = (
                         <View style={styles.avatarPlaceholder} />
                     )}
                     <View>
-                        <Text style={styles.authorName}>{authorName}</Text>
-                        <Text style={styles.meta}>{displayDate}</Text>
+                        <Text style={[styles.authorName, { color: theme.text }]}>{authorName}</Text>
+                        <Text style={[styles.meta, { color: theme.textSecondary }]}>{displayDate}</Text>
                     </View>
                 </View>
 
@@ -100,12 +103,12 @@ export const PostCard = (
                         style={styles.menuButton}
                         onPress={handleMenuPress}
                     >
-                        <Ionicons name="ellipsis-horizontal" size={18} color="#64748b" />
+                        <Ionicons name="ellipsis-horizontal" size={18} color={theme.iconColor} />
                     </Pressable>
                 )}
             </View>
 
-            <Text style={styles.bodyText}>{bodyText}</Text>
+            <Text style={[styles.bodyText, { color: theme.text }]}>{bodyText}</Text>
 
             {postImageUrl ? (
                 <View style={styles.postImageWrap}>
@@ -116,25 +119,25 @@ export const PostCard = (
                     />
                 </View>
             ) : null}
-            <View style={styles.separator} />
+            <View style={[styles.separator, { backgroundColor: theme.border }]} />
 
             <View style={styles.actionRow}>
                 <Pressable style={styles.actionButton} onPress={onLike}>
                     <Ionicons
                         name={isLikedByCurrentUser ? "heart" : "heart-outline"}
                         size={22}
-                        color={isLikedByCurrentUser ? "#ef4444" : "#64748b"}
+                        color={isLikedByCurrentUser ? "#ef4444" : theme.iconColor}
                     />
-                    <Text style={styles.actionCount}>{likeCount}</Text>
+                    <Text style={[styles.actionCount, { color: theme.textSecondary }]}>{likeCount}</Text>
                 </Pressable>
 
                 <Pressable style={styles.actionButton} onPress={onCommentPress}>
                     <Ionicons
                         name="chatbubble-outline"
                         size={21}
-                        color="#64748b"
+                        color={theme.iconColor}
                     />
-                    <Text style={styles.actionCount}>{commentCount}</Text>
+                    <Text style={[styles.actionCount, { color: theme.textSecondary }]}>{commentCount}</Text>
                 </Pressable>
             </View>
         </View>

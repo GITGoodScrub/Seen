@@ -20,6 +20,7 @@ import {
     loadFeedPosts,
     togglePostLike,
     updatePost,
+    useDarkMode,
 } from "../Services";
 
 type HomeScreenProps = {
@@ -36,6 +37,7 @@ export const HomeScreen = (
     }: HomeScreenProps,
 ) =>
 {
+    const { theme } = useDarkMode();
     const [feedPosts, setFeedPosts] = useState<FeedPost[]>([]);
     const [isLoading, setIsLoading] = useState(refreshKey === 0);
     const [isRefreshing, setIsRefreshing] = useState(refreshKey > 0);
@@ -185,13 +187,13 @@ export const HomeScreen = (
     const fallbackAuthor = authSession.user.username ? `@${authSession.user.username}` : "You";
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: theme.background }]}>
             <FeedSearchBar
                 placeholderText="Search people, venues, and posts"
                 onPress={onSearchPress}
             />
 
-            <Text style={styles.sectionTitle}>Feed</Text>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Feed</Text>
 
             <ScrollView
                 contentContainerStyle={styles.feedList}
@@ -200,17 +202,19 @@ export const HomeScreen = (
                     <RefreshControl
                         refreshing={isRefreshing}
                         onRefresh={handleRefresh}
-                        tintColor="#1d4ed8"
+                        tintColor={theme.primary}
+                        colors={[theme.primary]}
+                        progressBackgroundColor={theme.surface}
                     />
                 }
             >
                 {isLoading ? (
-                    <View style={styles.centerStateWrap}>
-                        <ActivityIndicator size="small" color="#1d4ed8" />
-                        <Text style={styles.helperText}>Loading your feed...</Text>
+                    <View style={[styles.centerStateWrap, { borderColor: theme.border, backgroundColor: theme.surface }]}> 
+                        <ActivityIndicator size="small" color={theme.primary} />
+                        <Text style={[styles.helperText, { color: theme.textSecondary }]}>Loading your feed...</Text>
                     </View>
                 ) : errorMessage ? (
-                    <View style={styles.centerStateWrap}>
+                    <View style={[styles.centerStateWrap, { borderColor: theme.border, backgroundColor: theme.surface }]}> 
                         <Text style={styles.errorText}>{errorMessage}</Text>
                         <Pressable
                             style={styles.retryButton}
@@ -219,13 +223,13 @@ export const HomeScreen = (
                                 void loadPosts();
                             }}
                         >
-                            <Text style={styles.retryButtonLabel}>Try again</Text>
+                            <Text style={[styles.retryButtonLabel, { color: theme.primary }]}>Try again</Text>
                         </Pressable>
                     </View>
                 ) : feedPosts.length === 0 ? (
-                    <View style={styles.centerStateWrap}>
-                        <Text style={styles.emptyTitle}>No posts in your feed yet.</Text>
-                        <Text style={styles.helperText}>Follow people to see their posts. For now, we only show your posts and posts from accounts you follow.</Text>
+                    <View style={[styles.centerStateWrap, { borderColor: theme.border, backgroundColor: theme.surface }]}> 
+                        <Text style={[styles.emptyTitle, { color: theme.text }]}>No posts in your feed yet.</Text>
+                        <Text style={[styles.helperText, { color: theme.textSecondary }]}>Follow people to see their posts. For now, we only show your posts and posts from accounts you follow.</Text>
                     </View>
                 ) : (
                     feedPosts.map(
@@ -298,15 +302,16 @@ export const HomeScreen = (
                 onRequestClose={() => { setEditingPostId(null); }}
             >
                 <View style={styles.editModalOverlay}>
-                    <View style={styles.editModalCard}>
-                        <Text style={styles.editModalTitle}>Edit post</Text>
+                    <View style={[styles.editModalCard, { backgroundColor: theme.surface }]}> 
+                        <Text style={[styles.editModalTitle, { color: theme.text }]}>Edit post</Text>
                         <TextInput
                             value={editingPostText}
                             onChangeText={setEditingPostText}
                             editable={!isSavingEdit}
                             multiline={true}
-                            style={styles.editModalInput}
+                            style={[styles.editModalInput, { borderColor: theme.borderLight, color: theme.text, backgroundColor: theme.background }]}
                             autoFocus={true}
+                            placeholderTextColor={theme.textSecondary}
                         />
                         <View style={styles.editModalButtons}>
                             <Pressable

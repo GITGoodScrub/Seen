@@ -5,6 +5,7 @@ import {
     Text,
     View,
 } from "react-native";
+import { useDarkMode } from "../../Services";
 
 type SelectOption<TValue extends string> = {
     label: string;
@@ -28,6 +29,7 @@ export const SelectDropdown = <TValue extends string>(
 ) =>
 {
     const [isOpen, setIsOpen] = useState(false);
+    const { theme } = useDarkMode();
 
     const selectedLabel = useMemo(
         () => options.find((option) => option.value === selectedValue)?.label ?? "Select",
@@ -57,31 +59,35 @@ export const SelectDropdown = <TValue extends string>(
                 onPress={handleToggle}
                 style={[
                     styles.field,
+                    { borderColor: theme.borderLight, backgroundColor: theme.surface },
                     disabled ? styles.fieldDisabled : null,
                     isOpen ? styles.fieldOpen : null,
                 ]}
             >
-                <Text style={styles.fieldLabel}>{selectedLabel}</Text>
-                <View style={styles.chevronBox}>
-                    <Text style={styles.chevronText}>{isOpen ? "˄" : "˅"}</Text>
+                <Text style={[styles.fieldLabel, { color: theme.text }]}>{selectedLabel}</Text>
+                <View style={[styles.chevronBox, { backgroundColor: theme.primaryLight, borderLeftColor: theme.primary }]}> 
+                    <Text style={[styles.chevronText, { color: theme.text }]}>{isOpen ? "˄" : "˅"}</Text>
                 </View>
             </Pressable>
 
             {isOpen ? (
-                <View style={styles.dropdownList}>
+                <View style={[styles.dropdownList, { borderColor: theme.borderLight, backgroundColor: theme.surface }]}> 
                     {options.map((option) => (
                         <Pressable
                             key={option.value}
                             onPress={() => handleSelect(option.value)}
                             style={[
                                 styles.optionButton,
+                                { borderTopColor: theme.border },
                                 option.value === selectedValue ? styles.optionButtonActive : null,
+                                option.value === selectedValue ? { backgroundColor: theme.primaryLight } : null,
                             ]}
                         >
                             <Text
                                 style={[
                                     styles.optionText,
                                     option.value === selectedValue ? styles.optionTextActive : null,
+                                    { color: option.value === selectedValue ? theme.primary : theme.text },
                                 ]}
                             >
                                 {option.label}

@@ -23,6 +23,7 @@ import {
     signInWithGoogle,
     signUpWithEmail,
     sendSeenPasswordResetEmail,             // line 255 - 287
+    useDarkMode,
 } from "../Services";
 
 WebBrowser.maybeCompleteAuthSession();
@@ -69,6 +70,7 @@ export const AuthScreen = (
     }: AuthScreenProps,
 ) =>
 {
+    const { theme } = useDarkMode();
     const [mode, setMode] = useState<AuthMode>("login");
     const [email, setEmail] = useState("");
     const [username, setUsername] = useState("");
@@ -332,28 +334,30 @@ export const AuthScreen = (
         : "Log In";
 
     return (
-        <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
+        <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={["top", "bottom"]}>
             <KeyboardAvoidingView
                 style={styles.keyboardAvoidingView}
                 behavior={Platform.OS === "ios" ? "padding" : undefined}
             >
                 <View style={styles.container}>
                     <View style={styles.headerBlock}>
-                        <Text style={styles.appName}>Seen</Text>
-                        <Text style={styles.subtitle}>Sign in to access your feed and profile.</Text>
+                        <Text style={[styles.appName, { color: theme.text }]}>Seen</Text>
+                        <Text style={[styles.subtitle, { color: theme.textSecondary }]}>Sign in to access your feed and profile.</Text>
                     </View>
 
-                    <View style={styles.modeSwitchRow}>
+                    <View style={[styles.modeSwitchRow, { backgroundColor: theme.surfaceSecondary }]}> 
                         <Pressable
                             style={[
                                 styles.modeButton,
                                 mode === "login" ? styles.modeButtonActive : null,
+                                mode === "login" ? { backgroundColor: theme.surface } : null,
                             ]}
                             onPress={() => switchMode("login")}
                         >
                             <Text style={[
                                 styles.modeButtonLabel,
                                 mode === "login" ? styles.modeButtonLabelActive : null,
+                                { color: mode === "login" ? theme.text : theme.textSecondary },
                             ]}
                             >
                                 Log In
@@ -364,12 +368,14 @@ export const AuthScreen = (
                             style={[
                                 styles.modeButton,
                                 mode === "signup" ? styles.modeButtonActive : null,
+                                mode === "signup" ? { backgroundColor: theme.surface } : null,
                             ]}
                             onPress={() => switchMode("signup")}
                         >
                             <Text style={[
                                 styles.modeButtonLabel,
                                 mode === "signup" ? styles.modeButtonLabelActive : null,
+                                { color: mode === "signup" ? theme.text : theme.textSecondary },
                             ]}
                             >
                                 Sign Up
@@ -377,10 +383,11 @@ export const AuthScreen = (
                         </Pressable>
                     </View>
 
-                    <View style={styles.formCard}>
+                    <View style={[styles.formCard, { backgroundColor: theme.surface, borderColor: theme.border }]}> 
                         <TextInput
-                            style={styles.input}
+                            style={[styles.input, { borderColor: theme.borderLight, color: theme.text, backgroundColor: theme.background }]}
                             placeholder="Email"
+                            placeholderTextColor={theme.textSecondary}
                             autoCapitalize="none"
                             keyboardType="email-address"
                             value={email}
@@ -390,8 +397,9 @@ export const AuthScreen = (
 
                         {mode === "signup" ? (
                             <TextInput
-                                style={styles.input}
+                                style={[styles.input, { borderColor: theme.borderLight, color: theme.text, backgroundColor: theme.background }]}
                                 placeholder="Username (a-z, 0-9, _)"
+                                placeholderTextColor={theme.textSecondary}
                                 autoCapitalize="none"
                                 value={username}
                                 onChangeText={setUsername}
@@ -400,8 +408,9 @@ export const AuthScreen = (
                         ) : null}
 
                         <TextInput
-                            style={styles.input}
+                            style={[styles.input, { borderColor: theme.borderLight, color: theme.text, backgroundColor: theme.background }]}
                             placeholder="Password"
+                            placeholderTextColor={theme.textSecondary}
                             secureTextEntry={true}
                             value={password}
                             onChangeText={setPassword}
@@ -428,14 +437,15 @@ export const AuthScreen = (
                                 }}
                                 disabled={isSubmitting}
                             >
-                                <Text style={styles.secondaryActionText}>Forgot password?</Text>
+                                <Text style={[styles.secondaryActionText, { color: theme.primary }]}>Forgot password?</Text>
                             </Pressable>
                         ) : null}
 
                         {mode === "signup" ? (
                             <TextInput
-                                style={styles.input}
+                                style={[styles.input, { borderColor: theme.borderLight, color: theme.text, backgroundColor: theme.background }]}
                                 placeholder="Confirm Password"
+                                placeholderTextColor={theme.textSecondary}
                                 secureTextEntry={true}
                                 value={confirmPassword}
                                 onChangeText={setConfirmPassword}
@@ -466,14 +476,15 @@ export const AuthScreen = (
                         </Pressable>
 
                         <View style={styles.dividerRow}>
-                            <View style={styles.dividerLine} />
-                            <Text style={styles.dividerLabel}>or</Text>
-                            <View style={styles.dividerLine} />
+                            <View style={[styles.dividerLine, { backgroundColor: theme.border }]} />
+                            <Text style={[styles.dividerLabel, { color: theme.textSecondary }]}>or</Text>
+                            <View style={[styles.dividerLine, { backgroundColor: theme.border }]} />
                         </View>
 
                         <Pressable
                             style={[
                                 styles.googleButton,
+                                { backgroundColor: theme.surface, borderColor: theme.borderLight },
                                 (!googleRequest || isSubmitting || !isGoogleConfigured) ? styles.disabledButton : null,
                             ]}
                             onPress={() =>
@@ -482,7 +493,7 @@ export const AuthScreen = (
                             }}
                             disabled={!googleRequest || isSubmitting || !isGoogleConfigured}
                         >
-                            <Text style={styles.googleButtonLabel}>Continue with Google</Text>
+                            <Text style={[styles.googleButtonLabel, { color: theme.text }]}>Continue with Google</Text>
                         </Pressable>
                     </View>
                 </View>
@@ -494,15 +505,16 @@ export const AuthScreen = (
                     onRequestClose={() => setIsResetOpen(false)}
                 >
                     <View style={styles.modalOverlay}>
-                        <View style={styles.modalCard}>
-                            <Text style={styles.modalTitle}>Reset password</Text>
-                            <Text style={styles.modalSubtitle}>
+                        <View style={[styles.modalCard, { backgroundColor: theme.surface, borderColor: theme.border }]}> 
+                            <Text style={[styles.modalTitle, { color: theme.text }]}>Reset password</Text>
+                            <Text style={[styles.modalSubtitle, { color: theme.textSecondary }]}> 
                                 Enter your email address and we’ll send you a reset link.
                             </Text>
 
                             <TextInput
-                                style={styles.input}
+                                style={[styles.input, { borderColor: theme.borderLight, color: theme.text, backgroundColor: theme.background }]}
                                 placeholder="Email"
+                                placeholderTextColor={theme.textSecondary}
                                 autoCapitalize="none"
                                 keyboardType="email-address"
                                 value={resetEmail}
@@ -541,7 +553,7 @@ export const AuthScreen = (
                                 }}
                                 disabled={isSubmitting}
                             >
-                                <Text style={styles.modalSecondaryButtonText}>Cancel</Text>
+                                <Text style={[styles.modalSecondaryButtonText, { color: theme.textSecondary }]}>Cancel</Text>
                             </Pressable>
                         </View>
                     </View>
