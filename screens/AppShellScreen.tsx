@@ -1,6 +1,6 @@
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Animated, Easing, Pressable, StyleSheet, View } from "react-native";
+import { Alert, Animated, Easing, Pressable, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AppHeader, BottomTabBar, SwipeBackGestureView } from "../components";
 import SideMenuDrawer from "../components/Navigation/SideMenuDrawer";
@@ -232,7 +232,18 @@ export const AppShellScreen = (
         {
             setIsSearchOpen(false);
             closeSideMenu();
-            onLogout?.();
+            Alert.alert(
+                "Sign out",
+                "Are you sure you want to sign out?",
+                [
+                    { text: "Cancel", style: "cancel" },
+                    {
+                        text: "Sign out",
+                        style: "destructive",
+                        onPress: () => onLogout?.(),
+                    },
+                ],
+            );
             return;
         }
 

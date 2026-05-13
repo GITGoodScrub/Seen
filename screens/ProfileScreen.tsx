@@ -960,6 +960,9 @@ export const ProfileScreen = (
         );
     }
 
+    const profileHeading = displayName.trim() || (username ? `@${username}` : "Profile");
+    const profileSubheading = bio.trim() || "No bio yet.";
+
     return (
         <View style={[styles.container, { backgroundColor: theme.background }]}> 
             <ScrollView
@@ -978,16 +981,16 @@ export const ProfileScreen = (
                 )}
             </View>
 
-            <Text style={[styles.title, { color: theme.text }]}>{isInEditMode ? "Edit Profile" : "Profile"}</Text>
+            <Text style={[styles.title, { color: theme.text }]}>{isInEditMode ? "Edit Profile" : profileHeading}</Text>
             <Text style={[styles.meta, { color: theme.textSecondary }]}>
                 {isInEditMode
                     ? "Update your public account details."
-                    : (isOwnProfile ? "Your public account details." : "Public profile." )}
+                    : profileSubheading}
             </Text>
 
             <View style={styles.statsRow}>
                 <Pressable
-                    style={[styles.statCard, { borderColor: theme.border, backgroundColor: theme.surface }]}
+                    style={[styles.statCard, { borderColor: theme.borderLight, backgroundColor: theme.surface }]}
                     onPress={() =>
                     {
                         handleOpenFollowList("followers");
@@ -998,7 +1001,7 @@ export const ProfileScreen = (
                 </Pressable>
 
                 <Pressable
-                    style={[styles.statCard, { borderColor: theme.border, backgroundColor: theme.surface }]}
+                    style={[styles.statCard, { borderColor: theme.borderLight, backgroundColor: theme.surface }]}
                     onPress={() =>
                     {
                         handleOpenFollowList("following");
@@ -1038,7 +1041,7 @@ export const ProfileScreen = (
                 </>
             ) : null}
 
-            <View style={[styles.panel, { backgroundColor: theme.surface, borderColor: theme.border }]}> 
+            <View style={[styles.panel, { backgroundColor: theme.surface, borderColor: theme.borderLight }]}> 
                 {isInEditMode ? (
                     <>
                         <Text style={[styles.label, { color: theme.textSecondary }]}>Username</Text>
@@ -1286,21 +1289,6 @@ export const ProfileScreen = (
                             </View>
                         </View>
 
-                        <View style={styles.readOnlyRow}>
-                            <Text style={[styles.readOnlyLabel, { color: theme.textSecondary }]}>Display Name</Text>
-                            <Text style={[styles.readOnlyValue, { color: theme.text }]}>{displayName || "-"}</Text>
-                        </View>
-
-                        <View style={styles.readOnlyRow}>
-                            <Text style={[styles.readOnlyLabel, { color: theme.textSecondary }]}>Bio</Text>
-                            <Text style={[styles.readOnlyValue, { color: theme.text }]}>{bio || "-"}</Text>
-                        </View>
-
-                        <View style={styles.readOnlyRow}>
-                            <Text style={[styles.readOnlyLabel, { color: theme.textSecondary }]}>Profile Photo</Text>
-                            <Text style={[styles.readOnlyValue, { color: theme.text }]}>{profilePhoto ? "Set" : "-"}</Text>
-                        </View>
-
                         {isOwnProfile ? (
                             <Pressable
                                 style={styles.secondaryButton}
@@ -1314,13 +1302,13 @@ export const ProfileScreen = (
             </View>
 
             {!isInEditMode ? (
-                <View style={[styles.panel, { backgroundColor: theme.surface, borderColor: theme.border }]}> 
+                <View style={[styles.panel, { backgroundColor: theme.surface, borderColor: theme.borderLight }]}> 
                     <Text style={[styles.sectionTitle, { color: theme.text }]}>Posts & Reviews</Text>
                     {profileActivity.length === 0 ? (
                         <Text style={[styles.readOnlyValue, { color: theme.text }]}>No activity yet.</Text>
                     ) : (
                         profileActivity.map((activityItem) => (
-                            <View key={activityItem.id} style={styles.activityRow}>
+                            <View key={activityItem.id} style={[styles.activityRow, { borderTopColor: theme.borderLight }]}>
                                 <View style={styles.activityHeaderRow}>
                                     <Text style={[styles.activityMetaText, { color: theme.textSecondary }]}>
                                         {getActivityTypeLabel(activityItem.type)}
@@ -1365,7 +1353,7 @@ export const ProfileScreen = (
                 }}
             >
                 <View style={styles.editModalOverlay}>
-                    <View style={[styles.editModalCard, { backgroundColor: theme.surface, borderColor: theme.border }]}> 
+                    <View style={[styles.editModalCard, { backgroundColor: theme.surface, borderColor: theme.borderLight }]}> 
                         <Text style={styles.editModalTitle}>
                             {editingActivity?.type === "post" ? "Edit post" : "Edit review"}
                         </Text>
@@ -1496,7 +1484,7 @@ export const ProfileScreen = (
                         </View>
 
                         <View
-                            style={styles.followListTabRow}
+                            style={[styles.followListTabRow, { borderBottomColor: theme.borderLight }]}
                             onLayout={(event) => setFollowListTabRowWidth(event.nativeEvent.layout.width)}
                         >
                             <Pressable
@@ -1576,7 +1564,7 @@ export const ProfileScreen = (
                                             : "?";
                                         return (
                                             <Pressable
-                                                style={styles.followListRow}
+                                                style={[styles.followListRow, { borderColor: theme.borderLight }]}
                                                 onPress={() => handleOpenProfileFromFollowList(item.userId)}
                                             >
                                                 <View style={styles.followListAvatar}>

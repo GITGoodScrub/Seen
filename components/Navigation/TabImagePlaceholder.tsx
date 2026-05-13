@@ -1,63 +1,58 @@
-import { StyleSheet, Text, View } from "react-native";
+import { Image, ImageSourcePropType, StyleSheet } from "react-native";
+import { AppTabKey, useDarkMode } from "../../Services";
 
 type TabImagePlaceholderProps = {
-    label: string;
+    tabKey: AppTabKey;
     isActive: boolean;
+};
+
+const lightIcons: Record<AppTabKey, ImageSourcePropType> = {
+    home: require("../../assets/home_icon.png"),
+    discover: require("../../assets/discover_icon.png"),
+    saved: require("../../assets/saved_icon.png"),
+    notifications: require("../../assets/notifications_icon.png"),
+    profile: require("../../assets/profile_icon.png"),
+};
+
+const darkIcons: Record<AppTabKey, ImageSourcePropType> = {
+    home: require("../../assets/home_icon_inverted.png"),
+    discover: require("../../assets/discover_icon_inverted.png"),
+    saved: require("../../assets/saved_icon_inverted.png"),
+    notifications: require("../../assets/notifications_icon_inverted.png"),
+    profile: require("../../assets/profile_icon_inverted.png"),
 };
 
 export const TabImagePlaceholder = (
     {
-        label,
+        tabKey,
         isActive,
     }: TabImagePlaceholderProps,
 ) =>
 {
+    const { isDarkMode } = useDarkMode();
+
     return (
-        <View
+        <Image
+            source={isDarkMode ? darkIcons[tabKey] : lightIcons[tabKey]}
             style={[
-                styles.container,
-                isActive ? styles.containerActive : undefined,
+                styles.icon,
+                isActive ? styles.iconActive : undefined,
             ]}
-        >
-            <Text
-                style={[
-                    styles.label,
-                    isActive ? styles.labelActive : undefined,
-                ]}
-            >
-                {label}
-            </Text>
-        </View>
+            resizeMode="contain"
+        />
     );
 };
 
 const styles = StyleSheet.create(
 {
-    container:
+    icon:
     {
         width: 24,
         height: 24,
-        borderRadius: 12,
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: "#d1d5db",
-        borderWidth: 1,
-        borderColor: "#c1c8d0",
         marginBottom: 4,
     },
-    containerActive:
+    iconActive:
     {
-        backgroundColor: "#1d4ed8",
-        borderColor: "#1d4ed8",
-    },
-    label:
-    {
-        fontSize: 11,
-        fontWeight: "700",
-        color: "#1f2937",
-    },
-    labelActive:
-    {
-        color: "#ffffff",
+        opacity: 1,
     },
 });

@@ -150,11 +150,11 @@ export const NewPostScreen = (
                 </Pressable>
             </View>
 
-            <View style={[styles.composerCard, { backgroundColor: theme.surface, borderColor: theme.border }]}> 
+            <View style={[styles.composerCard, { backgroundColor: theme.surface, borderColor: theme.borderLight }]}> 
                 <View style={styles.authorRow}>
-                    <View style={styles.avatarPlaceholder} />
+                    <View style={[styles.avatarPlaceholder, { backgroundColor: theme.surfaceSecondary, borderColor: theme.borderLight }]} />
                     <View>
-                        <Text style={styles.authorName}>{displayName}</Text>
+                        <Text style={[styles.authorName, { color: theme.text }]}>{displayName}</Text>
                         <Text style={[styles.authorMeta, { color: theme.textSecondary }]}>Share what you are seeing right now.</Text>
                     </View>
                 </View>
@@ -172,7 +172,7 @@ export const NewPostScreen = (
 
                 <View style={styles.photoSection}>
                     <Pressable
-                        style={styles.photoActionButton}
+                        style={[styles.photoActionButton, { borderColor: theme.borderLight, backgroundColor: theme.surfaceSecondary }]}
                         disabled={isPosting}
                         onPress={() =>
                         {

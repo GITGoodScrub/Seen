@@ -56,6 +56,7 @@ type ReviewVisibilityValue = (typeof reviewVisibilityOptions)[number]["value"];
 export const VenueDetailScreen = ({ authSession, venueId }: VenueDetailScreenProps) =>
 {
     const { theme } = useDarkMode();
+    const panelBorderColor = theme.borderLight;
     const [venue, setVenue] = useState<VenueDetail | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
@@ -297,7 +298,7 @@ export const VenueDetailScreen = ({ authSession, venueId }: VenueDetailScreenPro
                 />
             }
         >
-            <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}> 
+            <View style={[styles.card, { backgroundColor: theme.surface, borderColor: panelBorderColor }]}> 
                 {venue.photo ? (
                     <Image source={{ uri: venue.photo }} style={styles.photo} />
                 ) : (
@@ -318,10 +319,10 @@ export const VenueDetailScreen = ({ authSession, venueId }: VenueDetailScreenPro
                 <Text style={[styles.bioText, { color: theme.text }]}>{venue.bio?.trim() || "No venue description yet."}</Text>
             </View>
 
-            <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}> 
+            <View style={[styles.card, { backgroundColor: theme.surface, borderColor: panelBorderColor }]}> 
                 <Text style={[styles.sectionTitle, { color: theme.text }]}>Reviews</Text>
-                <View style={styles.reviewComposer}>
-                    <Text style={styles.reviewComposerTitle}>
+                <View style={[styles.reviewComposer, { borderBottomColor: panelBorderColor }]}>
+                    <Text style={[styles.reviewComposerTitle, { color: theme.text }]}>
                         {editingReviewId === null ? "Leave a review" : "Edit your review"}
                     </Text>
                     <View style={styles.starPickerRow}>
@@ -349,12 +350,13 @@ export const VenueDetailScreen = ({ authSession, venueId }: VenueDetailScreenPro
                         onChangeText={setReviewText}
                         editable={!isSubmittingReview}
                         placeholder="Write your review"
+                        placeholderTextColor={theme.textSecondary}
                         multiline={true}
-                        style={styles.reviewInput}
+                        style={[styles.reviewInput, { borderColor: panelBorderColor, color: theme.text, backgroundColor: theme.background }]}
                     />
                     <View style={styles.reviewVisibilityBlock}>
-                        <Text style={styles.reviewVisibilityLabel}>Review visibility</Text>
-                        <Text style={styles.reviewVisibilityHint}>Who can see this review:</Text>
+                        <Text style={[styles.reviewVisibilityLabel, { color: theme.text }]}>Review visibility</Text>
+                        <Text style={[styles.reviewVisibilityHint, { color: theme.textSecondary }]}>Who can see this review:</Text>
                         <SelectDropdown
                             disabled={isSubmittingReview}
                             selectedValue={reviewVisibility}
@@ -388,9 +390,9 @@ export const VenueDetailScreen = ({ authSession, venueId }: VenueDetailScreenPro
                     <Text style={styles.emptyText}>No reviews yet.</Text>
                 ) : (
                     venue.reviews.map((review) => (
-                        <View key={review.reviewId} style={styles.reviewRow}>
+                        <View key={review.reviewId} style={[styles.reviewRow, { borderTopColor: panelBorderColor }]}>
                             <View style={styles.reviewHeaderRow}>
-                                <Text style={styles.reviewTopLine}>
+                                <Text style={[styles.reviewTopLine, { color: theme.textSecondary }]}>
                                     {(review.username ? `@${review.username}` : "Unknown user")}
                                     {" · "}
                                     {review.rating}/5
@@ -407,7 +409,7 @@ export const VenueDetailScreen = ({ authSession, venueId }: VenueDetailScreenPro
                                         style={styles.reviewMenuButton}
                                         onPress={() => handleReviewMenuPress(review)}
                                     >
-                                        <Ionicons name="ellipsis-horizontal" size={18} color="#64748b" />
+                                        <Ionicons name="ellipsis-horizontal" size={18} color={theme.iconColor} />
                                     </Pressable>
                                 ) : null}
                             </View>
@@ -418,13 +420,13 @@ export const VenueDetailScreen = ({ authSession, venueId }: VenueDetailScreenPro
                 )}
             </View>
 
-            <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}> 
+            <View style={[styles.card, { backgroundColor: theme.surface, borderColor: panelBorderColor }]}> 
                 <Text style={[styles.sectionTitle, { color: theme.text }]}>Upcoming Events</Text>
                 {venue.upcomingEvents.length === 0 ? (
                     <Text style={styles.emptyText}>No upcoming events at this venue.</Text>
                 ) : (
                     venue.upcomingEvents.map((eventItem) => (
-                        <View key={eventItem.occurrenceId} style={styles.reviewRow}>
+                        <View key={eventItem.occurrenceId} style={[styles.reviewRow, { borderTopColor: panelBorderColor }]}>
                             <Text style={styles.occurrenceTitle}>{eventItem.title}</Text>
                             <Text style={styles.metaText}>{formatDate(eventItem.startTime)}</Text>
                             <Text style={styles.metaText}>

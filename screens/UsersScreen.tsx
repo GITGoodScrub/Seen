@@ -142,7 +142,7 @@ export const UsersScreen = () =>
                 }
                 ListHeaderComponent={
                     errorMessage ? (
-                        <Text style={[styles.warningText, { color: theme.warning, backgroundColor: theme.surfaceSecondary, borderColor: theme.warning }]}> 
+                        <Text style={[styles.warningText, { color: theme.warning, backgroundColor: theme.surfaceSecondary, borderColor: theme.borderLight }]}> 
                             Showing last loaded users. Refresh failed: {errorMessage}
                         </Text>
                     ) : null

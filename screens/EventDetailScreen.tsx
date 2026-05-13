@@ -2,6 +2,7 @@ import * as Calendar from "expo-calendar";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
     ActivityIndicator,
+    Image,
     Alert,
     Platform,
     Pressable,
@@ -145,6 +146,7 @@ export const EventDetailScreen = (
 ) =>
 {
     const { theme } = useDarkMode();
+    const panelBorderColor = theme.borderLight;
     const [eventDetail, setEventDetail] = useState<EventSeriesDetail | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
@@ -472,7 +474,14 @@ export const EventDetailScreen = (
                 />
             }
         >
-            <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}> 
+            <View style={[styles.card, { backgroundColor: theme.surface, borderColor: panelBorderColor }]}> 
+                {eventDetail.posterURL ? (
+                    <Image source={{ uri: eventDetail.posterURL }} style={styles.posterImage} />
+                ) : (
+                    <View style={[styles.posterPlaceholder, { backgroundColor: theme.surfaceSecondary, borderColor: panelBorderColor }]}> 
+                        <Text style={[styles.posterPlaceholderText, { color: theme.textSecondary }]}>No poster available</Text>
+                    </View>
+                )}
                 <Text style={[styles.title, { color: theme.text }]}>{eventDetail.title}</Text>
                 <Pressable
                     onPress={() => onOpenVenuePress?.(eventDetail.venueId)}
@@ -507,12 +516,12 @@ export const EventDetailScreen = (
                 ) : null}
             </View>
 
-            <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}> 
+            <View style={[styles.card, { backgroundColor: theme.surface, borderColor: panelBorderColor }]}> 
                 <Text style={[styles.sectionTitle, { color: theme.text }]}>Artists</Text>
                 <Text style={[styles.bodyText, { color: theme.textSecondary }]}>{artistSummary}</Text>
             </View>
 
-            <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}> 
+            <View style={[styles.card, { backgroundColor: theme.surface, borderColor: panelBorderColor }]}> 
                 <Text style={[styles.sectionTitle, { color: theme.text }]}>Series Rating</Text>
                 {eventDetail.averageRating === null ? (
                     <Text style={styles.bodyText}>No ratings yet.</Text>
@@ -525,8 +534,8 @@ export const EventDetailScreen = (
                     </>
                 )}
 
-                <View style={[styles.reviewComposer, { borderTopColor: theme.border }]}> 
-                    <Text style={styles.reviewComposerTitle}>
+                <View style={[styles.reviewComposer, { borderTopColor: panelBorderColor }]}> 
+                    <Text style={[styles.reviewComposerTitle, { color: theme.text }]}>
                         {editingReviewId === null ? "Leave a review" : "Edit your review"}
                     </Text>
                     <View style={styles.starPickerRow}>
@@ -554,12 +563,13 @@ export const EventDetailScreen = (
                         onChangeText={setReviewText}
                         editable={!isSubmittingReview}
                         placeholder="Write your review"
+                        placeholderTextColor={theme.textSecondary}
                         multiline={true}
-                        style={styles.reviewInput}
+                        style={[styles.reviewInput, { borderColor: panelBorderColor, color: theme.text, backgroundColor: theme.background }]}
                     />
                     <View style={styles.reviewVisibilityBlock}>
-                        <Text style={styles.reviewVisibilityLabel}>Review visibility</Text>
-                        <Text style={styles.reviewVisibilityHint}>Who can see this review:</Text>
+                        <Text style={[styles.reviewVisibilityLabel, { color: theme.text }]}>Review visibility</Text>
+                        <Text style={[styles.reviewVisibilityHint, { color: theme.textSecondary }]}>Who can see this review:</Text>
                         <SelectDropdown
                             disabled={isSubmittingReview}
                             selectedValue={reviewVisibility}
@@ -590,13 +600,13 @@ export const EventDetailScreen = (
                 </View>
             </View>
 
-            <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}> 
+            <View style={[styles.card, { backgroundColor: theme.surface, borderColor: panelBorderColor }]}> 
                 <Text style={[styles.sectionTitle, { color: theme.text }]}>Reviews</Text>
                 {eventDetail.reviews.length === 0 ? (
                     <Text style={styles.bodyText}>No reviews yet.</Text>
                 ) : (
                     eventDetail.reviews.map((review) => (
-                        <View key={review.reviewId} style={[styles.occurrenceRow, { borderTopColor: theme.border }]}> 
+                        <View key={review.reviewId} style={[styles.occurrenceRow, { borderTopColor: panelBorderColor }]}> 
                             <View style={styles.reviewHeaderRow}>
                                 <Text style={[styles.reviewTopLine, { color: theme.textSecondary }]}>
                                     {(review.username ? `@${review.username}` : "Unknown user")}
@@ -626,13 +636,13 @@ export const EventDetailScreen = (
                 )}
             </View>
 
-            <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}> 
+            <View style={[styles.card, { backgroundColor: theme.surface, borderColor: panelBorderColor }]}> 
                 <Text style={[styles.sectionTitle, { color: theme.text }]}>Occurrences</Text>
                 {eventDetail.occurrences.length === 0 ? (
                     <Text style={styles.bodyText}>No occurrences yet.</Text>
                 ) : (
                     eventDetail.occurrences.map((occurrence) => (
-                        <View key={occurrence.id} style={[styles.occurrenceRow, { borderTopColor: theme.border }]}> 
+                        <View key={occurrence.id} style={[styles.occurrenceRow, { borderTopColor: panelBorderColor }]}> 
                             <Text style={styles.occurrenceTitle}>
                                 {renderOccurrenceTitle(occurrence, eventDetail.title)}
                             </Text>
@@ -694,6 +704,26 @@ const styles = StyleSheet.create({
         fontWeight: "700",
         color: "#0f172a",
         marginBottom: 8,
+    },
+    posterImage: {
+        width: "100%",
+        height: 220,
+        borderRadius: 10,
+        marginBottom: 10,
+        backgroundColor: "#e2e8f0",
+    },
+    posterPlaceholder: {
+        width: "100%",
+        height: 220,
+        borderRadius: 10,
+        marginBottom: 10,
+        borderWidth: 1,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    posterPlaceholderText: {
+        fontSize: 13,
+        fontWeight: "600",
     },
     venueButton: {
         alignSelf: "flex-start",

@@ -41,7 +41,7 @@ export const BottomTabBar = (
                             onPress={() => onTabPress(tab.key)}
                         >
                             <TabImagePlaceholder
-                                label={tab.iconLabel}
+                                tabKey={tab.key}
                                 isActive={isActive}
                             />
 

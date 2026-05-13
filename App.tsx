@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Image, StyleSheet, Text, View } from "react-native";
+
+const logoInverted = require("./assets/seen_logo_inverted.png");
+const logoDark = require("./assets/seen_logo.png");
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { AppShellScreen, AuthScreen, InterestsOnboardingScreen } from "./screens";
 import {
@@ -246,7 +249,8 @@ const AppContent = (
             {authViewState === "loading" ? (
                 <SafeAreaView style={[styles.loadingSafeArea, { backgroundColor: theme.background }]} edges={["top", "bottom"]}>
                     <View style={styles.loadingContent}>
-                        <ActivityIndicator size="large" color={theme.primary} />
+                        <Image source={isDarkMode ? logoDark : logoInverted} style={styles.loadingLogo} resizeMode="contain" />
+                        <ActivityIndicator size="large" color={theme.primary} style={styles.loadingSpinner} />
                         <Text style={[styles.loadingLabel, { color: theme.textSecondary }]}>Loading your Seen session...</Text>
                     </View>
                 </SafeAreaView>
@@ -297,6 +301,16 @@ const styles = StyleSheet.create(
         flex: 1,
         justifyContent: "center",
         alignItems: "center",
+    },
+    loadingLogo:
+    {
+        width: 200,
+        height: 80,
+        marginBottom: 24,
+    },
+    loadingSpinner:
+    {
+        marginBottom: 8,
     },
     loadingLabel:
     {

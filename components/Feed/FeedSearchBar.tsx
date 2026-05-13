@@ -1,5 +1,8 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Image, StyleSheet, Pressable, Text, View } from "react-native";
 import { useDarkMode } from "../../Services";
+
+const searchIconLight = require("../../assets/search_icon.png");
+const searchIconDark = require("../../assets/search_icon_inverted.png");
 
 type FeedSearchBarProps = {
     placeholderText?: string;
@@ -13,7 +16,7 @@ export const FeedSearchBar = (
     }: FeedSearchBarProps,
 ) =>
 {
-    const { theme } = useDarkMode();
+    const { isDarkMode, theme } = useDarkMode();
 
     return (
         <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
@@ -21,8 +24,11 @@ export const FeedSearchBar = (
                 style={[styles.searchShell, { borderColor: theme.borderLight, backgroundColor: theme.background }]}
                 onPress={onPress}
             >
-                <View style={[styles.searchIconCircle, { borderColor: theme.iconColor }]} />
-                <View style={[styles.searchIconHandle, { backgroundColor: theme.iconColor }]} />
+                <Image
+                    source={isDarkMode ? searchIconDark : searchIconLight}
+                    style={styles.searchIcon}
+                    resizeMode="contain"
+                />
                 <Text style={[styles.placeholderText, { color: theme.textSecondary }]}>{placeholderText}</Text>
             </Pressable>
         </View>
@@ -52,25 +58,11 @@ const styles = StyleSheet.create(
         flexDirection: "row",
         alignItems: "center",
     },
-    searchIconCircle:
+    searchIcon:
     {
-        width: 12,
-        height: 12,
-        borderWidth: 2,
-        borderColor: "#64748b",
-        borderRadius: 6,
-        marginRight: 6,
-    },
-    searchIconHandle:
-    {
-        width: 7,
-        height: 2,
-        backgroundColor: "#64748b",
-        borderRadius: 2,
-        transform: [{ rotate: "45deg" }],
+        width: 18,
+        height: 18,
         marginRight: 10,
-        marginTop: 6,
-        marginLeft: -2,
     },
     placeholderText:
     {

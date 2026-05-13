@@ -210,7 +210,8 @@ const styles = StyleSheet.create(
         borderTopLeftRadius: 20,
         borderTopRightRadius: 20,
         paddingBottom: 30,
-        maxHeight: "80%",
+        height: "88%",
+        maxHeight: "88%",
     },
     handle:
     {
@@ -249,7 +250,7 @@ const styles = StyleSheet.create(
     },
     list:
     {
-        flexShrink: 1,
+        flex: 1,
     },
     listContent:
     {

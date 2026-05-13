@@ -246,10 +246,10 @@ export const SearchScreen = (
                 return (
                     <Pressable
                         key={recentSearch}
-                        style={styles.listRow}
+                        style={[styles.listRow, { backgroundColor: theme.surface, borderColor: theme.borderLight }]}
                         onPress={() => handleSubmitSearch(recentSearch)}
                     >
-                        <Text style={styles.listTitle}>{recentSearch}</Text>
+                        <Text style={[styles.listTitle, { color: theme.text }]}>{recentSearch}</Text>
                     </Pressable>
                 );
             },
@@ -295,21 +295,21 @@ export const SearchScreen = (
                 return (
                     <Pressable
                         key={result.id}
-                        style={styles.listRow}
+                        style={[styles.listRow, { backgroundColor: theme.surface, borderColor: theme.borderLight }]}
                         onPress={() => handlePressSearchResult(result)}
                     >
                         {result.thumbnailUrl ? (
                             <Image source={{ uri: result.thumbnailUrl }} style={styles.resultThumbnail} />
                         ) : (
-                            <View style={styles.resultThumbnailFallback}>
-                                <Text style={styles.resultThumbnailFallbackText}>{getInitials(result.title)}</Text>
+                            <View style={[styles.resultThumbnailFallback, { backgroundColor: theme.surfaceSecondary }]}>
+                                <Text style={[styles.resultThumbnailFallbackText, { color: theme.textSecondary }]}>{getInitials(result.title)}</Text>
                             </View>
                         )}
 
                         <View style={styles.listTextWrap}>
-                            <Text style={styles.listTitle} numberOfLines={1}>{result.title}</Text>
+                            <Text style={[styles.listTitle, { color: theme.text }]} numberOfLines={1}>{result.title}</Text>
                             <View style={styles.listSubtitleRow}>
-                                <Text style={styles.listSubtitle} numberOfLines={1}>{result.subtitle}</Text>
+                                <Text style={[styles.listSubtitle, { color: theme.textSecondary }]} numberOfLines={1}>{result.subtitle}</Text>
                                 {result.type === "user" && result.isVerified ? <VerifiedBadge /> : null}
                             </View>
                         </View>
@@ -352,13 +352,13 @@ export const SearchScreen = (
             >
                 {trimmedSearchQuery ? (
                     <View>
-                        <Text style={styles.sectionTitle}>Results</Text>
+                        <Text style={[styles.sectionTitle, { color: theme.text }]}>Results</Text>
                         {renderSearchResults()}
                     </View>
                 ) : (
                     <View>
                         <View style={styles.recentHeaderRow}>
-                            <Text style={styles.sectionTitle}>Recent Searches</Text>
+                            <Text style={[styles.sectionTitle, { color: theme.text }]}>Recent Searches</Text>
                             {recentSearches.length > 0 ? (
                                 <Pressable onPress={onClearRecentSearches}>
                                     <Text style={styles.clearLabel}>Clear</Text>

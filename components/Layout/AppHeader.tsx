@@ -1,6 +1,11 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Image, Pressable, StyleSheet, View } from "react-native";
 import { higLayout } from "../../constants";
 import { useDarkMode } from "../../Services";
+
+const logoLight = require("../../assets/seen_logo_inverted.png");
+const logoDark = require("../../assets/seen_logo.png");
+const settingsIconLight = require("../../assets/settings_icon.png");
+const settingsIconDark = require("../../assets/settings_icon_inverted.png");
 
 type AppHeaderProps = {
     onMenuPress?: () => void;
@@ -16,7 +21,7 @@ export const AppHeader = (
     }: AppHeaderProps,
 ) =>
 {
-    const { theme } = useDarkMode();
+    const { isDarkMode, theme } = useDarkMode();
 
     return (
         <View style={[styles.headerContainer, { borderBottomColor: theme.border, backgroundColor: theme.surface }]}>
@@ -29,7 +34,11 @@ export const AppHeader = (
                 <View style={[styles.burgerLine, { backgroundColor: theme.text }]} />
             </Pressable>
 
-            <Text style={[styles.headerTitle, { color: theme.primary }]}>Seen</Text>
+            <Image
+                source={isDarkMode ? logoDark : logoLight}
+                style={styles.headerLogo}
+                resizeMode="contain"
+            />
 
             <Pressable
                 style={styles.iconButton}
@@ -37,13 +46,11 @@ export const AppHeader = (
                 disabled={rightActionIcon === "none"}
             >
                 {rightActionIcon === "none" ? null : rightActionIcon === "settings" ? (
-                    <View style={[styles.settingsIconOuter, { borderColor: theme.text }]}>
-                        <View style={[styles.settingsTooth, styles.settingsToothTop, { backgroundColor: theme.text }]} />
-                        <View style={[styles.settingsTooth, styles.settingsToothBottom, { backgroundColor: theme.text }]} />
-                        <View style={[styles.settingsToothVertical, styles.settingsToothLeft, { backgroundColor: theme.text }]} />
-                        <View style={[styles.settingsToothVertical, styles.settingsToothRight, { backgroundColor: theme.text }]} />
-                        <View style={[styles.settingsIconInner, { backgroundColor: theme.text }]} />
-                    </View>
+                    <Image
+                        source={isDarkMode ? settingsIconDark : settingsIconLight}
+                        style={styles.headerActionIcon}
+                        resizeMode="contain"
+                    />
                 ) : (
                     <>
                         <View style={[styles.plusHorizontal, { backgroundColor: theme.text }]} />
@@ -70,11 +77,15 @@ const styles = StyleSheet.create(
         justifyContent: "space-between",
         minHeight: higLayout.topBarMinHeight,
     },
-    headerTitle:
+    headerLogo:
     {
-        fontSize: 28,
-        fontWeight: "700",
-        color: "#1d4ed8",
+        height: 36,
+        width: 120,
+    },
+    headerActionIcon:
+    {
+        width: 22,
+        height: 22,
     },
     iconButton:
     {
@@ -106,54 +117,5 @@ const styles = StyleSheet.create(
         backgroundColor: "#111827",
         borderRadius: 2,
         position: "absolute",
-    },
-    settingsIconOuter:
-    {
-        width: 18,
-        height: 18,
-        borderWidth: 2,
-        borderColor: "#111827",
-        borderRadius: 9,
-        alignItems: "center",
-        justifyContent: "center",
-    },
-    settingsIconInner:
-    {
-        width: 5,
-        height: 5,
-        borderRadius: 3,
-        backgroundColor: "#111827",
-    },
-    settingsTooth:
-    {
-        width: 4,
-        height: 2,
-        backgroundColor: "#111827",
-        borderRadius: 1,
-        position: "absolute",
-    },
-    settingsToothTop:
-    {
-        top: -3,
-    },
-    settingsToothBottom:
-    {
-        bottom: -3,
-    },
-    settingsToothVertical:
-    {
-        width: 2,
-        height: 4,
-        backgroundColor: "#111827",
-        borderRadius: 1,
-        position: "absolute",
-    },
-    settingsToothLeft:
-    {
-        left: -3,
-    },
-    settingsToothRight:
-    {
-        right: -3,
     },
 });

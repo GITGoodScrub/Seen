@@ -262,13 +262,13 @@ export const InterestsOnboardingScreen = (
                         <Text style={[styles.subtitle, { color: theme.textSecondary }]}>Based on your interests, here are some artists to kick things off.</Text>
 
                         {recommendedArtists.length === 0 ? (
-                            <View style={[styles.emptyBox, { borderColor: theme.border, backgroundColor: theme.surface }]}>
+                            <View style={[styles.emptyBox, { borderColor: theme.borderLight, backgroundColor: theme.surface }]}>
                                 <Text style={[styles.emptyText, { color: theme.textSecondary }]}>No suggestions yet. We will improve suggestions as more events are tagged.</Text>
                             </View>
                         ) : (
                             <View style={styles.artistList}>
                                 {recommendedArtists.map((artist) => (
-                                    <View key={artist.artistId} style={[styles.artistRow, { borderColor: theme.border, backgroundColor: theme.surface }]}> 
+                                    <View key={artist.artistId} style={[styles.artistRow, { borderColor: theme.borderLight, backgroundColor: theme.surface }]}> 
                                         <View style={styles.artistInfo}>
                                             {artist.photo ? (
                                                 <Image source={{ uri: artist.photo }} style={styles.artistPhoto} />
