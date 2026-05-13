@@ -15,6 +15,7 @@ export type EventSeriesItem = {
     nextOccurrenceId: number | null;
     averageRating: number | null;
     reviewCount: number;
+    distanceKm?: number;
     tags: {
         tagId: number;
         name: string;

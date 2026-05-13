@@ -174,9 +174,15 @@ const isCreateEventSeriesResponse = (value: unknown): value is CreateEventSeries
 
 // ─── Service functions ────────────────────────────────────────────────────────
 
-export const loadEventSeries = async (): Promise<EventSeriesItem[]> =>
+export const loadEventSeries = async (
+    location?: { lat: number; lng: number },
+): Promise<EventSeriesItem[]> =>
 {
-    const response = await requestJsonWithFailover<EventSeriesFeedResponse>(eventSeriesRoute);
+    const route = location
+        ? `${eventSeriesRoute}?lat=${location.lat}&lng=${location.lng}`
+        : eventSeriesRoute;
+
+    const response = await requestJsonWithFailover<EventSeriesFeedResponse>(route);
 
     if (!isEventSeriesFeedResponse(response))
     {
