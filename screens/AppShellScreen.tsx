@@ -14,6 +14,7 @@ import {
     getDefaultRecentSearches,
     getSideMenuItems,
     loadNotifications,
+    useDarkMode,
 } from "../Services";
 import { DiscoverScreen } from "./DiscoverScreen";
 import { EventCreationScreen } from "./EventCreationScreen";
@@ -131,6 +132,7 @@ export const AppShellScreen = (
     }: AppShellScreenProps,
 ) =>
 {
+    const { isDarkMode, theme } = useDarkMode();
     const tabs = useMemo(
         () => getAppTabs(),
         [],
@@ -650,8 +652,8 @@ export const AppShellScreen = (
     })();
 
     return (
-        <View style={styles.container}>
-            <StatusBar style="dark" />
+        <View style={[styles.container, { backgroundColor: theme.background }]}>
+            <StatusBar style={isDarkMode ? "light" : "dark"} />
 
             <Animated.View
                 pointerEvents={isSideMenuVisible ? "auto" : "none"}
@@ -669,7 +671,7 @@ export const AppShellScreen = (
             >
                 <SafeAreaView
                     edges={["top", "bottom"]}
-                    style={styles.sideMenuSafeArea}
+                    style={[styles.sideMenuSafeArea, { backgroundColor: theme.surface }]}
                 >
                     <SideMenuDrawer
                         items={sideMenuItems}
@@ -690,12 +692,13 @@ export const AppShellScreen = (
                                 translateX: mainContentTranslateX,
                             },
                         ],
+                        backgroundColor: theme.background,
                     },
                 ]}
             >
                 <SafeAreaView
                     edges={["top"]}
-                    style={styles.headerSafeArea}
+                    style={[styles.headerSafeArea, { backgroundColor: theme.surface }]}
                 >
                     <AppHeader
                         onMenuPress={handleToggleSideMenu}
@@ -727,7 +730,7 @@ export const AppShellScreen = (
 
                 <SafeAreaView
                     edges={["bottom"]}
-                    style={styles.navSafeArea}
+                    style={[styles.navSafeArea, { backgroundColor: theme.surface }]}
                 >
                     <BottomTabBar
                         tabs={tabs}

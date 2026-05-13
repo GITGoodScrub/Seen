@@ -4,6 +4,7 @@ import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { AppShellScreen, AuthScreen, InterestsOnboardingScreen } from "./screens";
 import {
     AuthSession,
+    DarkModeProvider,
     InterestSetup,
     getErrorMessageFromUnknown,
     loadInterestSetup,
@@ -191,7 +192,8 @@ export default function App()
     );
 
     return (
-        <SafeAreaProvider>
+        <DarkModeProvider>
+            <SafeAreaProvider>
             {authViewState === "loading" ? (
                 <SafeAreaView style={styles.loadingSafeArea} edges={["top", "bottom"]}>
                     <View style={styles.loadingContent}>
@@ -238,7 +240,8 @@ export default function App()
                 />
                 )
             ) : null}
-        </SafeAreaProvider>
+            </SafeAreaProvider>
+        </DarkModeProvider>
     );
 }
 

@@ -20,6 +20,7 @@ import * as ImagePicker from "expo-image-picker";
 import { SelectDropdown } from "../components/Inputs/SelectDropdown";
 import {
     AuthSession,
+    DarkModePreference,
     deletePost,
     deleteSeriesReview,
     deleteVenueReview,
@@ -45,6 +46,7 @@ import {
     updatePost,
     updateSeriesReview,
     updateVenueReview,
+    useDarkMode,
 } from "../Services";
 
 type ProfileScreenProps = {
@@ -171,6 +173,7 @@ export const ProfileScreen = (
     const selectedUserId = profileUserId ?? authSession.user.id;
     const isOwnProfile = selectedUserId === authSession.user.id;
     const isInEditMode = isOwnProfile && isEditing;
+    const { preference: darkModePreference, toggleDarkMode } = useDarkMode();
     const followListPanelProgress = useRef(new Animated.Value(0)).current;
     const followTabIndicatorProgress = useRef(
         new Animated.Value(activeFollowListType === "followers" ? 0 : 1),
@@ -1195,6 +1198,46 @@ export const ProfileScreen = (
                             <Text style={styles.errorText}>{interestSettingsErrorMessage}</Text>
                         ) : null}
 
+                        <Text style={styles.sectionTitle}>Appearance</Text>
+
+                        <View style={styles.appearanceSettingRow}>
+                            <Text style={styles.appearanceSettingLabel}>Dark mode</Text>
+                            <View style={styles.darkModeToggleContainer}>
+                                <Pressable
+                                    style={[
+                                        styles.darkModeToggleButton,
+                                        darkModePreference === "off" && styles.darkModeToggleButtonActive,
+                                    ]}
+                                    onPress={() => toggleDarkMode("off")}
+                                >
+                                    <Text
+                                        style={[
+                                            styles.darkModeToggleButtonText,
+                                            darkModePreference === "off" && styles.darkModeToggleButtonTextActive,
+                                        ]}
+                                    >
+                                        ⊙ Off
+                                    </Text>
+                                </Pressable>
+                                <Pressable
+                                    style={[
+                                        styles.darkModeToggleButton,
+                                        darkModePreference === "on" && styles.darkModeToggleButtonActive,
+                                    ]}
+                                    onPress={() => toggleDarkMode("on")}
+                                >
+                                    <Text
+                                        style={[
+                                            styles.darkModeToggleButtonText,
+                                            darkModePreference === "on" && styles.darkModeToggleButtonTextActive,
+                                        ]}
+                                    >
+                                        ⊖ On
+                                    </Text>
+                                </Pressable>
+                            </View>
+                        </View>
+
                         {errorMessage ? (
                             <Text style={styles.errorText}>{errorMessage}</Text>
                         ) : null}
@@ -2171,5 +2214,53 @@ const styles = StyleSheet.create(
     editReviewStarActive:
     {
         color: "#f59e0b",
+    },
+    appearanceSettingRow:
+    {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        borderWidth: 1,
+        borderColor: "#d9dee5",
+        borderRadius: 10,
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        backgroundColor: "#ffffff",
+        marginBottom: 12,
+    },
+    appearanceSettingLabel:
+    {
+        fontSize: 14,
+        color: "#0f172a",
+        fontWeight: "600",
+    },
+    darkModeToggleContainer:
+    {
+        flexDirection: "row",
+        gap: 8,
+    },
+    darkModeToggleButton:
+    {
+        borderWidth: 1,
+        borderColor: "#cbd5e1",
+        borderRadius: 8,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        backgroundColor: "#f8fafc",
+    },
+    darkModeToggleButtonActive:
+    {
+        borderColor: "#1d4ed8",
+        backgroundColor: "#dbeafe",
+    },
+    darkModeToggleButtonText:
+    {
+        fontSize: 12,
+        fontWeight: "600",
+        color: "#64748b",
+    },
+    darkModeToggleButtonTextActive:
+    {
+        color: "#1d4ed8",
     },
 });

@@ -30,3 +30,6 @@ export * from "./eventReminderSettingsTypes";
 export * from "./eventReminderSettingsService";
 export * from "./interestTypes";
 export * from "./interestService";
+export * from "./darkModeTypes";
+export * from "./darkModeService";
+export * from "./darkModeContext";
