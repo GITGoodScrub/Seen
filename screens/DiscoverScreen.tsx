@@ -11,6 +11,7 @@ import {
     View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import * as Location from "expo-location";
 import { FeedSearchBar } from "../components";
 import { ToastBanner } from "../components/Feedback";
 import {
@@ -37,6 +38,39 @@ type DiscoverSection = {
     tagType: string | null;
     isInterest: boolean;
     events: EventSeriesItem[];
+};
+
+const formatDistanceKm = (km: number): string =>
+{
+    if (km < 1)
+    {
+        return `${Math.round(km * 1000)} m`;
+    }
+
+    return `${km.toFixed(1)} km`;
+};
+
+const getLocationSafe = async (): Promise<{ lat: number; lng: number } | null> =>
+{
+    try
+    {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+
+        if (status !== "granted")
+        {
+            return null;
+        }
+
+        const position = await Location.getCurrentPositionAsync(
+            { accuracy: Location.Accuracy.Balanced },
+        );
+
+        return { lat: position.coords.latitude, lng: position.coords.longitude };
+    }
+    catch
+    {
+        return null;
+    }
 };
 
 const formatDate = (isoString: string | null): string =>
@@ -142,8 +176,9 @@ export const DiscoverScreen = (
 
             try
             {
+                const location = await getLocationSafe();
                 const [series, savedEvents, interests] = await Promise.all([
-                    loadEventSeries(),
+                    loadEventSeries(location ?? undefined),
                     loadSavedEvents(),
                     loadInterestSetup(),
                 ]);
@@ -304,8 +339,11 @@ export const DiscoverScreen = (
                                                     )}
 
                                                     <View style={styles.railBody}>
-                                                        <Text style={[styles.railTitle, { color: theme.text }]} numberOfLines={2}>{event.title}</Text>
-                                                        <Text style={[styles.railMeta, { color: theme.textSecondary }]} numberOfLines={1}>{event.venueName}</Text>
+                                                        <Text style={styles.railTitle} numberOfLines={2}>{event.title}</Text>
+                                                        <Text style={styles.railMeta} numberOfLines={1}>{event.venueName}</Text>
+                                                        {event.distanceKm !== undefined ? (
+                                                            <Text style={styles.railDistance}>{formatDistanceKm(event.distanceKm)}</Text>
+                                                        ) : null}
                                                         <View style={styles.railFooter}>
                                                             <Text style={[styles.railDate, { color: theme.textSecondary }]}>{formatDate(event.nextOccurrenceAt)}</Text>
                                                             <Pressable
@@ -372,8 +410,11 @@ export const DiscoverScreen = (
                                                     )}
 
                                                     <View style={styles.railBody}>
-                                                        <Text style={[styles.railTitle, { color: theme.text }]} numberOfLines={2}>{event.title}</Text>
-                                                        <Text style={[styles.railMeta, { color: theme.textSecondary }]} numberOfLines={1}>{event.venueName}</Text>
+                                                        <Text style={styles.railTitle} numberOfLines={2}>{event.title}</Text>
+                                                        <Text style={styles.railMeta} numberOfLines={1}>{event.venueName}</Text>
+                                                        {event.distanceKm !== undefined ? (
+                                                            <Text style={styles.railDistance}>{formatDistanceKm(event.distanceKm)}</Text>
+                                                        ) : null}
                                                         <View style={styles.railFooter}>
                                                             <Text style={[styles.railDate, { color: theme.textSecondary }]}>{formatDate(event.nextOccurrenceAt)}</Text>
                                                             <Pressable
@@ -523,6 +564,12 @@ const styles = StyleSheet.create(
     {
         color: "#64748b",
         fontSize: 12,
+    },
+    railDistance:
+    {
+        color: "#6366f1",
+        fontSize: 11,
+        fontWeight: "600",
     },
     railFooter:
     {
